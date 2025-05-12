@@ -1,0 +1,47 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "PoolSync Setup: Connect to Device",
+        "description": "Enter the local IP address of your AutoPilot PoolSync device.",
+        "data": {
+          "ip_address": "IP Address"
+        }
+      },
+      "link": {
+        "title": "PoolSync Setup: Link Device",
+        "description": "Press the 'Service' button on your PoolSync device located at `{ip_address}`.\n\nThe system will wait for confirmation. You have approximately `{time_remaining}` seconds remaining.\n\nIf this step times out or fails, you may need to restart the PoolSync device before trying again.",
+        "data": {}
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the PoolSync device at the specified IP address. Please check the IP address and ensure the device is powered on and connected to the network.",
+      "invalid_ip": "The IP address format is invalid. Please enter a valid IP address (e.g., 192.168.1.100).",
+      "api_error": "An API error occurred while communicating with the PoolSync device. Check Home Assistant logs for more details. The device might have responded with an unexpected message.",
+      "link_failed": "The linking process failed. The device did not provide a valid password after the button press, or a communication error occurred during linking. Please try again. You may need to restart your PoolSync device.",
+      "link_timeout": "The linking process timed out. The 'Service' button was not pressed within the allowed time, or the device did not respond with a password. Please try adding the integration again. You may need to restart your PoolSync device.",
+      "unknown": "An unexpected error occurred. Please check the Home Assistant logs for details."
+    },
+    "abort": {
+      "already_configured": "This PoolSync device (based on its MAC address) is already configured.",
+      "internal_error": "An internal error occurred in the configuration flow. Please try again.",
+      "user_cancelled": "Configuration cancelled by user.",
+      "internal_error_polling_setup": "Internal setup error during the device linking (polling) phase. Please try again."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "PoolSync Options",
+        "description": "Adjust settings for the PoolSync integration. The current update interval is {current_interval} seconds.",
+        "data": {
+          "scan_interval": "Update interval (seconds)"
+        }
+      }
+    },
+    "error": {
+        "invalid_scan_interval": "The scan interval must be a number greater than or equal to 10 seconds (e.g., 30, 60, 120)."
+    },
+    "abort": {}
+  }
+}
