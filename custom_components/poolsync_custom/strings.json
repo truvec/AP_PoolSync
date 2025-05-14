@@ -43,5 +43,12 @@
         "invalid_scan_interval": "The scan interval must be a number greater than or equal to 10 seconds (e.g., 30, 60, 120)."
     },
     "abort": {}
+  },
+  "entity": {
+    "number": {
+      "chlor_output_control": {
+        "name": "Chlorinator Output"
+      }
+    }
   }
 }

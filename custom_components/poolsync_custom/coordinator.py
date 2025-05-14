@@ -14,7 +14,7 @@ from .api import (
     PoolSyncApiCommunicationError,
     PoolSyncApiError,
 )
-from .const import DOMAIN, MANUFACTURER, MODEL, DEFAULT_NAME # Ensure these are in const.py
+from .const import DOMAIN, MANUFACTURER, MODEL, DEFAULT_NAME
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,33 +26,34 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         self,
         hass: HomeAssistant,
         api_client: PoolSyncApiClient,
-        password: str,
+        password: str, # Password needed for API calls
         update_interval_seconds: int,
         config_entry_id: str, # For logging/context
         mac_address: str,     # For unique device identification
     ) -> None:
         """Initialize the data update coordinator."""
         self.api_client = api_client
-        self._password = password
+        self._password = password # Store password for use by entities/services via coordinator
         self.config_entry_id = config_entry_id
         self.mac_address = mac_address
         # Store IP from client for device_info configuration_url
-        self._ip_address = api_client._ip_address # Accessing protected member, ensure it's stable or pass explicitly
+        self._ip_address = api_client._ip_address # Accessing protected member
 
         # Create a more specific logger name for this coordinator instance
         logger_name = f"{DOMAIN}({self.mac_address or self._ip_address})"
-
+        
         super().__init__(
             hass,
-            _LOGGER, # Use the module logger, but the name arg below makes it specific
+            _LOGGER, # Use the module logger
             name=logger_name, # Name of the coordinator instance (for logging)
             update_interval=timedelta(seconds=update_interval_seconds),
-            update_method=self._async_update_data, # Method to call for updates
+            update_method=self._async_update_data, # Set the update method
         )
         _LOGGER.info(
             "PoolSync coordinator initialized for %s (MAC: %s, IP: %s) with update interval %d seconds",
             self.name, self.mac_address, self._ip_address, update_interval_seconds
         )
+
 
     async def _async_update_data(self) -> Dict[str, Any]:
         """
@@ -64,24 +65,21 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             # Use the stored password to fetch all data
             data = await self.api_client.get_all_data(self._password)
             _LOGGER.debug("Coordinator %s: Successfully fetched data. Keys: %s", self.name, data.keys() if isinstance(data, dict) else "N/A")
-            if not isinstance(data, dict) or "poolSync" not in data:
-                _LOGGER.error("Coordinator %s: Fetched data is not a dict or 'poolSync' key is missing. Data: %s", self.name, data)
-                raise UpdateFailed(f"Malformed data received from {self.name}: 'poolSync' key missing or data not a dict.")
+            if not isinstance(data, dict) or not all(k in data for k in ["poolSync", "devices"]):
+                _LOGGER.error("Coordinator %s: Fetched data is not a dict or essential keys ('poolSync', 'devices') are missing. Data: %s", self.name, data)
+                raise UpdateFailed(f"Malformed data received from {self.name}: essential keys missing or data not a dict.")
             return data # Return the full data structure
 
         except PoolSyncApiAuthError as err:
-            _LOGGER.error("Coordinator %s: Authentication error fetching data: %s (Status: %s)", self.name, err, err.status_code)
-            # This will trigger a reauth flow if the integration supports it,
-            # or mark the entry as failed.
+            _LOGGER.error("Coordinator %s: Authentication error fetching data: %s (Status: %s)", self.name, err, getattr(err, 'status_code', 'N/A'))
             raise ConfigEntryAuthFailed(f"Authentication failed for {self.name}. Password may be invalid.") from err
-
+        
         except PoolSyncApiCommunicationError as err:
-            # Log as warning because UpdateFailed will cause retries
             _LOGGER.warning("Coordinator %s: Communication error fetching data: %s. Will retry.", self.name, err)
             raise UpdateFailed(f"Error communicating with PoolSync device {self.name}: {err}") from err
 
-        except PoolSyncApiError as err: # Other API errors (e.g., unexpected response)
-            _LOGGER.error("Coordinator %s: API error fetching data: %s (Status: %s, Body: %s)", self.name, err, err.status_code, err.body)
+        except PoolSyncApiError as err: # Other API-level errors
+            _LOGGER.error("Coordinator %s: API error fetching data: %s (Status: %s, Body: %s)", self.name, err, getattr(err, 'status_code', 'N/A'), getattr(err, 'body', 'N/A'))
             raise UpdateFailed(f"API error for {self.name}: {err}") from err
 
         except Exception as err: # Catch any other unexpected exceptions
@@ -91,50 +89,40 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information for entities to use."""
-        # Default values
         device_name = DEFAULT_NAME
         model_name = MODEL
         sw_version = None
         hw_version = None
         config_name_from_api: Optional[str] = None
 
-        # Try to extract more specific info from the coordinator's data
         if self.data and isinstance(self.data.get("poolSync"), dict):
-            poolsync_data = self.data["poolSync"]
-
-            if isinstance(poolsync_data.get("config"), dict):
-                config_name_from_api = poolsync_data["config"].get("name")
-
-            if isinstance(poolsync_data.get("system"), dict):
-                system_info = poolsync_data["system"]
+            poolsync_main_data = self.data["poolSync"]
+            if isinstance(poolsync_main_data.get("config"), dict):
+                config_name_from_api = poolsync_main_data["config"].get("name")
+            if isinstance(poolsync_main_data.get("system"), dict):
+                system_info = poolsync_main_data["system"]
                 sw_version = system_info.get("fwVersion")
                 hw_version = system_info.get("hwVersion")
-                # MAC address from system data should match self.mac_address if available
-                # api_mac = system_info.get("macAddr")
-                # if api_mac and api_mac != self.mac_address:
-                #    _LOGGER.warning("MAC address mismatch! Config: %s, API: %s", self.mac_address, api_mac)
 
-            # Try to get a more specific model name from device '0' if present
-            if isinstance(poolsync_data.get("devices"), dict) and \
-               isinstance(poolsync_data["devices"].get("0"), dict):
-                device0_data = poolsync_data["devices"]["0"]
-                if isinstance(device0_data.get("nodeAttr"), dict):
-                    model_name = device0_data["nodeAttr"].get("name", model_name) # e.g., "ChlorSync®"
+        if self.data and isinstance(self.data.get("devices"), dict) and \
+           isinstance(self.data["devices"].get("0"), dict):
+            device0_data = self.data["devices"]["0"]
+            if isinstance(device0_data.get("nodeAttr"), dict):
+                api_model_name = device0_data["nodeAttr"].get("name")
+                if api_model_name: # Use ChlorSync® as model if available
+                    model_name = api_model_name
 
-        # Use the name from API config if available and not generic, otherwise default
         if config_name_from_api and config_name_from_api != "PoolSync®":
             device_name = config_name_from_api
-        else: # Append last 6 of MAC to default name for better identification if API name is generic/missing
-            device_name = f"{DEFAULT_NAME} {self.mac_address[-6:]}" if self.mac_address else DEFAULT_NAME
+        else:
+            device_name = f"{DEFAULT_NAME} {self.mac_address[-6:]}" if self.mac_address and len(self.mac_address) >= 6 else DEFAULT_NAME
 
         return DeviceInfo(
-            identifiers={(DOMAIN, self.mac_address)}, # Crucial for linking entities to device
+            identifiers={(DOMAIN, self.mac_address)},
             name=device_name,
             manufacturer=MANUFACTURER,
-            model=str(model_name) if model_name else MODEL, # Ensure model is a string
+            model=str(model_name) if model_name else MODEL,
             sw_version=str(sw_version) if sw_version is not None else None,
             hw_version=str(hw_version) if hw_version is not None else None,
-            configuration_url=f"http://{self._ip_address}", # Link to the device's web UI if it has one
-            # via_device: Optional[Tuple[str, str]] = None, # If this device is connected via another HA device
+            configuration_url=f"http://{self._ip_address}",
         )
-

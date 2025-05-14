@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
 
-This is a custom integration for Home Assistant to monitor AutoPilot PoolSync pool chlorinators over the local network. It does not rely on any cloud services.
+This is a custom integration for Home Assistant to monitor and control AutoPilot PoolSync pool chlorinators over the local network. It does not rely on any cloud services.
 
 ## Features
 
@@ -10,6 +10,7 @@ This is a custom integration for Home Assistant to monitor AutoPilot PoolSync po
 * Retrieves comprehensive status and configuration data.
 * Creates sensors in Home Assistant for key metrics (e.g., water temperature, salt PPM, flow rate, device status).
 * Creates binary sensors for online status and other states like faults or service mode.
+* **Control Chlorinator Output:** Allows setting the chlorine output percentage via a number entity.
 * Configurable update interval via an options flow.
 
 ## Prerequisites
@@ -53,27 +54,30 @@ This is a custom integration for Home Assistant to monitor AutoPilot PoolSync po
 
 This integration will create several entities, including (but not limited to):
 
-* Water Temperature
-* Salt Level (PPM)
-* Flow Rate
-* Chlorinator Output Setting (%)
-* Boost Time Remaining
-* PoolSync Online Status
-* ChlorSync Module Online Status
-* System Fault Status
-* ChlorSync Fault Status
-* Service Mode Active
+* **Sensors:**
+    * Water Temperature
+    * Salt Level (PPM)
+    * Flow Rate
+    * Chlorinator Output Setting (current setting read from device)
+    * Boost Time Remaining
+    * Various diagnostic sensors (Wi-Fi RSSI, board temperature, cell currents/voltages, firmware versions - some may be disabled by default).
+* **Binary Sensors:**
+    * PoolSync Online Status
+    * ChlorSync Module Online Status
+    * System Fault Status
+    * ChlorSync Fault Status
+    * Service Mode Active
+* **Number Controls:**
+    * Chlorinator Output (allows setting the output percentage, typically 0-100%)
 
-Some diagnostic sensors (like Wi-Fi RSSI, board temperature, cell currents/voltages, firmware versions) are also created but may be disabled by default. You can enable them from the entity settings in Home Assistant if needed.
-
-The exact entities will depend on the data reported by your specific PoolSync model and firmware.
+The exact entities will depend on the data reported by your specific PoolSync model and firmware. Some diagnostic entities may be disabled by default and can be enabled via the entity settings in Home Assistant.
 
 ## Options
 
 After setting up the integration, you can adjust the polling interval:
 1. Go to **Settings > Devices & Services**.
 2. Find the PoolSync integration card and click **Configure**.
-3. Adjust the "Update interval (seconds)" and click **Submit**. The integration will reload with the new interval.
+3. Adjust the "Update interval (seconds)" (e.g., 30, 60, 120; minimum 10 seconds) and click **Submit**. The integration will reload with the new interval.
 
 ## MQTT Integration (Optional)
 
@@ -94,7 +98,7 @@ Configure these in your `configuration.yaml` as per the Home Assistant documenta
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request if you have ideas for improvements or bug fixes.
+Contributions are welcome! Please open an issue or submit a pull request if you have ideas for improvements or bug fixes. Remember to replace placeholder GitHub usernames/repository names in the documentation if you fork this project.
 
 ## Disclaimer
 
