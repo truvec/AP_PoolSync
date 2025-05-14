@@ -47,53 +47,74 @@ async def async_setup_entry(
 ) -> None:
     """Set up PoolSync number entities based on a config entry."""
     coordinator: PoolSyncDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    _LOGGER.debug("Setting up number entities for %s", coordinator.name)
+    _LOGGER.debug("NUMBER_PLATFORM: Starting async_setup_entry for %s.", coordinator.name)
 
     number_entities: list[PoolSyncChlorOutputNumberEntity] = []
 
-    if not coordinator.data or not isinstance(coordinator.data.get("devices"), dict) or \
-       not isinstance(coordinator.data["devices"].get("0"), dict):
+    if not coordinator.data:
+        _LOGGER.warning("NUMBER_PLATFORM: Coordinator %s has no data. Cannot set up number entities.", coordinator.name)
+        return
+
+    if not isinstance(coordinator.data.get("devices"), dict):
+        _LOGGER.warning("NUMBER_PLATFORM: Coordinator %s data is missing 'devices' dictionary. Cannot set up Chlorinator Output.", coordinator.name)
+        return
+        
+    if not isinstance(coordinator.data["devices"].get("0"), dict):
         _LOGGER.warning(
-            "Coordinator %s: 'devices.0' key missing or not a dict in initial data. "
-            "Chlorinator Output number entity cannot be set up.",
-            coordinator.name
+            "NUMBER_PLATFORM: Coordinator %s data 'devices' dictionary is missing '0' key or it's not a dict. "
+            "Chlorinator Output number entity cannot be set up. devices content: %s",
+            coordinator.name, coordinator.data["devices"]
         )
-        return # Cannot set up the number entity without its data path
+        return
+
+    _LOGGER.debug("NUMBER_PLATFORM: Coordinator data seems valid for device '0'. Proceeding to create number entities.")
 
     for description, data_path, value_fn in NUMBER_DESCRIPTIONS:
-        # Ensure the specific path for chlorOutput exists
+        _LOGGER.debug("NUMBER_PLATFORM: Processing number entity description for key: %s", description.key)
         current_value = _get_value_from_path(coordinator.data, data_path)
         if current_value is None:
             _LOGGER.warning(
-                "Coordinator %s: Value for number entity %s at path %s is None. "
-                "Entity may be unavailable or show an unexpected state.",
+                "NUMBER_PLATFORM: Coordinator %s: Value for number entity %s at path %s is None. "
+                "Entity may be unavailable or show an unexpected state initially.",
                 coordinator.name, description.key, data_path
             )
-        # Always add the entity; its availability will handle missing data.
-        number_entities.append(
-            PoolSyncChlorOutputNumberEntity(coordinator, description, data_path, value_fn)
-        )
+        else:
+            _LOGGER.debug(
+                "NUMBER_PLATFORM: Coordinator %s: Initial value for number entity %s at path %s is %s.",
+                coordinator.name, description.key, data_path, current_value
+            )
+        
+        try:
+            entity_instance = PoolSyncChlorOutputNumberEntity(coordinator, description, data_path, value_fn)
+            number_entities.append(entity_instance)
+            _LOGGER.debug("NUMBER_PLATFORM: Successfully created instance for %s.", description.key)
+        except Exception as e:
+            _LOGGER.exception("NUMBER_PLATFORM: Error creating instance for %s: %s", description.key, e)
+
 
     if number_entities:
+        _LOGGER.debug("NUMBER_PLATFORM: Adding %d number entities.", len(number_entities))
         async_add_entities(number_entities)
-        _LOGGER.info("Added %d PoolSync number entities for %s", len(number_entities), coordinator.name)
+        _LOGGER.info("NUMBER_PLATFORM: Added %d PoolSync number entities for %s", len(number_entities), coordinator.name)
+    else:
+        _LOGGER.warning("NUMBER_PLATFORM: No number entities were created for %s. Check descriptions and data paths.", coordinator.name)
 
 
 class PoolSyncChlorOutputNumberEntity(CoordinatorEntity[PoolSyncDataUpdateCoordinator], NumberEntity):
     """Representation of a PoolSync Chlorinator Output Number entity."""
 
-    _attr_has_entity_name = True # Use the entity_description.name as the entity's name
+    _attr_has_entity_name = True
 
     def __init__(
         self,
         coordinator: PoolSyncDataUpdateCoordinator,
         description: NumberEntityDescription,
         data_path: List[str],
-        value_fn: Optional[Callable[[Any], Any]] = None, # Though not typically used for number value
+        value_fn: Optional[Callable[[Any], Any]] = None,
     ) -> None:
         """Initialize the number entity."""
         super().__init__(coordinator)
-        self.entity_description = description # This sets name, icon, uom, min/max, step, mode
+        self.entity_description = description
         self._data_path = data_path
         self._value_fn = value_fn # Not used for native_value here, but kept for pattern consistency
 
@@ -101,7 +122,7 @@ class PoolSyncChlorOutputNumberEntity(CoordinatorEntity[PoolSyncDataUpdateCoordi
         self._attr_device_info = coordinator.device_info
 
         _LOGGER.debug(
-            "Initializing number entity: Name: %s, Unique ID: %s, Data Path: %s",
+            "NUMBER_ENTITY %s: Initialized. Unique ID: %s, Data Path: %s",
             self.entity_description.name, self._attr_unique_id, self._data_path
         )
 
@@ -109,16 +130,15 @@ class PoolSyncChlorOutputNumberEntity(CoordinatorEntity[PoolSyncDataUpdateCoordi
     def native_value(self) -> Optional[float]:
         """Return the current value of the number entity."""
         value = _get_value_from_path(self.coordinator.data, self._data_path)
+        # _LOGGER.debug("NUMBER_ENTITY %s: native_value raw from path %s: %s", self.entity_description.key, self._data_path, value)
         if value is None:
-            _LOGGER.debug("Number entity %s: native_value is None from path %s", self.entity_description.key, self._data_path)
             return None
         try:
             num_value = float(value)
-            _LOGGER.debug("Number entity %s: native_value is %s from path %s", self.entity_description.key, num_value, self._data_path)
             return num_value
         except (ValueError, TypeError):
             _LOGGER.error(
-                "Number entity %s: could not convert value '%s' (type: %s) to float from path %s",
+                "NUMBER_ENTITY %s: could not convert value '%s' (type: %s) to float from path %s",
                 self.entity_description.key, value, type(value).__name__, self._data_path
             )
             return None
@@ -127,43 +147,47 @@ class PoolSyncChlorOutputNumberEntity(CoordinatorEntity[PoolSyncDataUpdateCoordi
         """Update the current value."""
         new_value = int(value) # API expects an integer for percentage
         _LOGGER.info(
-            "Number entity %s: Attempting to set native_value to %d (float value: %f)",
+            "NUMBER_ENTITY %s: Attempting to set native_value to %d (from HA UI float value: %f)",
             self.entity_description.key, new_value, value
         )
 
-        # Get password from coordinator's config entry data (or API client if stored there)
-        # Assuming password is on the coordinator instance, passed during __init__
         if not hasattr(self.coordinator, '_password') or not self.coordinator._password:
-             _LOGGER.error("Number entity %s: Password not available on coordinator. Cannot set value.", self.entity_description.key)
+             _LOGGER.error("NUMBER_ENTITY %s: Password not available on coordinator. Cannot set value.", self.entity_description.key)
              raise HomeAssistantError("API password not available to set value.")
+        
+        current_api_password = self.coordinator._password
+        _LOGGER.debug("NUMBER_ENTITY %s: Using password from coordinator to set value.", self.entity_description.key)
 
         try:
-            await self.coordinator.api_client.async_set_chlor_output(
-                password=self.coordinator._password, # Access password stored on coordinator
+            _LOGGER.debug("NUMBER_ENTITY %s: Calling api_client.async_set_chlor_output with value %d", self.entity_description.key, new_value)
+            api_response = await self.coordinator.api_client.async_set_chlor_output(
+                password=current_api_password,
                 output_percentage=new_value
             )
-            # After setting, request a refresh of the coordinator data to get the latest state
-            # This ensures the UI updates promptly with the (potentially) new value from the device.
-            await self.coordinator.async_request_refresh()
-            _LOGGER.info("Number entity %s: Successfully set value to %d and requested refresh.", self.entity_description.key, new_value)
+            _LOGGER.info("NUMBER_ENTITY %s: API call to set chlor_output to %d completed. Response: %s", self.entity_description.key, new_value, api_response)
 
+            _LOGGER.debug("NUMBER_ENTITY %s: Requesting coordinator refresh after setting value.", self.entity_description.key)
+            await self.coordinator.async_request_refresh()
+            _LOGGER.info("NUMBER_ENTITY %s: Successfully set value to %d and requested refresh.", self.entity_description.key, new_value)
+
+        except HomeAssistantError: 
+            raise
         except Exception as e:
             _LOGGER.error(
-                "Number entity %s: Failed to set new value %d: %s",
+                "NUMBER_ENTITY %s: Failed to set new value %d: %s",
                 self.entity_description.key, new_value, e
             )
-            # Optionally, re-raise a more specific Home Assistant error if desired
             raise HomeAssistantError(f"Failed to set chlorine output to {new_value}%: {e}") from e
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        # Available if coordinator is available and the data point for current value exists
         coordinator_available = super().available
+        # Check if the specific data path for the current value exists
         value_exists = _get_value_from_path(self.coordinator.data, self._data_path) is not None
         is_available = coordinator_available and value_exists
         # _LOGGER.debug(
-        #     "Number entity %s: Availability check: coordinator_available=%s, value_exists=%s, final_available=%s",
+        #     "NUMBER_ENTITY %s: Availability check: coordinator_available=%s, value_exists_at_path=%s, final_available=%s",
         #     self.entity_description.key, coordinator_available, value_exists, is_available
         # )
         return is_available
