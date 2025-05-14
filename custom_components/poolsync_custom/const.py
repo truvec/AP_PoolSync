@@ -36,10 +36,11 @@ PUSHLINK_CHECK_INTERVAL_S = 5  # How often to poll for pushlink status (seconds)
 PUSHLINK_TIMEOUT_S = 120       # How long to wait for the user to press the button (seconds)
 
 # Other constants
-HTTP_TIMEOUT = 20  # Increased timeout for HTTP requests (seconds)
+HTTP_TIMEOUT = 25  # <<< Increased timeout for HTTP requests (seconds)
 
 # Platform
 PLATFORMS = ["sensor", "binary_sensor"]
 
 # Option keys
 OPTION_SCAN_INTERVAL = "scan_interval"
+
