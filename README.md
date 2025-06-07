@@ -11,6 +11,7 @@ This is a custom integration for Home Assistant to monitor and control AutoPilot
 * Creates sensors in Home Assistant for key metrics (e.g., water temperature, salt PPM, flow rate, device status).
 * Creates binary sensors for online status and other states like faults or service mode.
 * **Control Chlorinator Output:** Allows setting the chlorine output percentage via a number entity.
+* **Control Heatpump Output:** Allows setting the temperature and mode via a number entity.
 * Configurable update interval via an options flow.
 
 ## Prerequisites
@@ -54,13 +55,18 @@ This is a custom integration for Home Assistant to monitor and control AutoPilot
 
 This integration will create several entities, including (but not limited to):
 
-* **Sensors:**
+* **Sensors (ChlorSync):**
     * Water Temperature
     * Salt Level (PPM)
     * Flow Rate
     * Chlorinator Output Setting (current setting read from device)
     * Boost Time Remaining
     * Various diagnostic sensors (Wi-Fi RSSI, board temperature, cell currents/voltages, firmware versions - some may be disabled by default).
+* **Sensors (HeatPump):**
+    * Water Temperature
+    * Setpoint Temperature
+    * Output Temperature
+    * Mode (0-off, 1-heat, 2-cool)
 * **Binary Sensors:**
     * PoolSync Online Status
     * ChlorSync Module Online Status
@@ -69,6 +75,8 @@ This integration will create several entities, including (but not limited to):
     * Service Mode Active
 * **Number Controls:**
     * Chlorinator Output (allows setting the output percentage, typically 0-100%)
+    * HeatPump Temperature Set Point (allows setting the output percentage, typically 40-104 F)
+    * HeatPump Mode (0-off, 1-on, 2-cool)
 
 The exact entities will depend on the data reported by your specific PoolSync model and firmware. Some diagnostic entities may be disabled by default and can be enabled via the entity settings in Home Assistant.
 
