@@ -198,7 +198,6 @@ async def async_setup_entry(
     
     if heatpump_id is not None:
         for description, data_path, value_fn in SENSOR_DESCRIPTIONS_POOLSYNC:
-            data_path[1] = heatpump_id
             sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
     
     if chlorinator_id is not None:
@@ -208,6 +207,8 @@ async def async_setup_entry(
  
     for description, data_path, value_fn in SENSOR_DESCRIPTIONS_HEATPUMP:
         _LOGGER.info("data_path")
+        _LOGGER.info(data_path)
+        data_path[1] = heatpump_id
         _LOGGER.info(data_path)
         sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
         
