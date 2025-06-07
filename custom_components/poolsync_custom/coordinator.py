@@ -72,8 +72,10 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 raise UpdateFailed(f"Malformed data received from {self.name}: essential keys missing or data not a dict.")
             if self.data and isinstance(self.data.get("deviceType"), dict):
                 deviceTypes = self.data["deviceType"]
-                self.heatpump_id = [key for key, value in device_type.items() if value == "heatPump"]
-                self.chlorinator_id = [key for key, value in device_type.items() if value == "chlorSync"]
+                temp = [key for key, value in deviceTypes.items() if value == "heatPump"]
+                selfl.heatpump_id = temp[0] if temp else None
+                temp = [key for key, value in deviceTypes.items() if value == "chlorSync"]
+                self.chlorinator_id = temp[0] if temp else None
             return data # Return the full data structure
 
         except PoolSyncApiAuthError as err:
