@@ -30,6 +30,8 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         update_interval_seconds: int,
         config_entry_id: str, # For logging/context
         mac_address: str,     # For unique device identification
+        heatpump_id: int,     # Heatpump id
+        chlorinator_id: int,  # chlorinator id
     ) -> None:
         """Initialize the data update coordinator."""
         self.api_client = api_client
@@ -68,6 +70,10 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             if not isinstance(data, dict) or not all(k in data for k in ["poolSync", "devices"]):
                 _LOGGER.error("Coordinator %s: Fetched data is not a dict or essential keys ('poolSync', 'devices') are missing. Data: %s", self.name, data)
                 raise UpdateFailed(f"Malformed data received from {self.name}: essential keys missing or data not a dict.")
+            if self.data and isinstance(self.data.get("deviceType"), dict):
+                deviceTypes = self.data["deviceType"]
+                self.heatpump_id = [key for key, value in device_type.items() if value == "heatPump"]
+                self.chlorinator_id = [key for key, value in device_type.items() if value == "chlorSync"]
             return data # Return the full data structure
 
         except PoolSyncApiAuthError as err:

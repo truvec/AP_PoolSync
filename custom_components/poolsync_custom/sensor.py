@@ -29,6 +29,20 @@ from .coordinator import PoolSyncDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+def description = _change_temperature_unit(description, is_metric):
+    if is_metric:
+        return description
+        
+    for key, val in description:
+        if val.native_unit_of_measurement is not UnitOfTemperature.CELSIUS:
+            continue
+        description[key] = dataclasses.replace(
+            val,
+            native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT ,
+        )
+    return description
+
+
 def _get_value_from_path(data: Optional[Dict[str, Any]], path: List[Union[str, int]]) -> Any:
     """Safely retrieve a value from a nested dictionary using a path list."""
     if data is None:
@@ -53,7 +67,7 @@ def _get_value_from_path(data: Optional[Dict[str, Any]], path: List[Union[str, i
         return None
 
 # Corrected SENSOR_DESCRIPTIONS paths
-SENSOR_DESCRIPTIONS: Tuple[Tuple[SensorEntityDescription, List[str], Optional[Callable[[Any], Any]]], ...] = (
+SENSOR_DESCRIPTIONS_CHLORSYNC: Tuple[Tuple[SensorEntityDescription, List[str], Optional[Callable[[Any], Any]]], ...] = (
     # --- ChlorSync Device Sensors (data from `devices.0`) ---
     (SensorEntityDescription(
         key="water_temp", name="Water Temperature", icon="mdi:coolant-temperature",
@@ -104,7 +118,8 @@ SENSOR_DESCRIPTIONS: Tuple[Tuple[SensorEntityDescription, List[str], Optional[Ca
         key="cell_hardware_version", name="Cell Hardware Version", icon="mdi:memory",
         entity_registry_enabled_default=False, entity_category=EntityCategory.DIAGNOSTIC,
     ), ["devices", "0", "system", "cellHwVersion"], None),
-
+)
+SENSOR_DESCRIPTIONS_POOLSYNC: Tuple[Tuple[SensorEntityDescription, List[str], Optional[Callable[[Any], Any]]], ...] = (    
     # --- System Wide Sensors (data from `poolSync`) ---
     (SensorEntityDescription(
         key="board_temp", name="Board Temperature", icon="mdi:thermometer-lines",
@@ -135,6 +150,33 @@ SENSOR_DESCRIPTIONS: Tuple[Tuple[SensorEntityDescription, List[str], Optional[Ca
         entity_registry_enabled_default=False, entity_category=EntityCategory.DIAGNOSTIC,
     ), ["poolSync", "stats", "upTimeSecs"], None),
 )
+SENSOR_DESCRIPTIONS_HEATPUMP: Tuple[Tuple[SensorEntityDescription, List[str], Optional[Callable[[Any], Any]]], ...] = (    
+    # --- HeatPump Device Sensors (data from `devices.0`) ---
+    (SensorEntityDescription(
+        key="hp_water_temp", name="Water Temperature", icon="mdi:coolant-temperature",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
+    ), ["devices", "0", "status", "waterTemp"], None),
+    (SensorEntityDescription(
+        key="hp_air_temp", name="Air Temperature", icon="mdi:coolant-temperature",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
+    ), ["devices", "0", "status", "airTemp"], None),
+    (SensorEntityDescription(
+        key="hp_outlet_temp", name="Outlet Temperature", icon="mdi:coolant-temperature",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
+    ), ["devices", "0", "status", "outletTemp"], None),
+    (SensorEntityDescription(
+        key="hp_mode", name="Mode", icon="mdi:pump", native_unit_of_measurement=None,
+        state_class=SensorStateClass.MEASUREMENT,
+    ), ["devices", "0", "config", "mode"], None),
+    (SensorEntityDescription(
+        key="hp_setpoint_temp", name="SetPoint Temperature", icon="mdi:coolant-temperature",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
+    ), ["devices", "0", "config", "setpoint"], None),
+)
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
@@ -147,9 +189,28 @@ async def async_setup_entry(
         _LOGGER.warning("Coordinator %s: Initial data is missing 'poolSync' or 'devices' top-level keys. Sensor setup may be incomplete.", coordinator.name)
         # Still attempt to add sensors; they will become unavailable if their specific data is missing.
     
-    for description, data_path, value_fn in SENSOR_DESCRIPTIONS:
-        sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
+    # change temperature unit
     
+    
+    
+    heatpump_id = coordinator.heatpump_id
+    chlorinator_id = coordinator.chlorinator_id
+    
+    if heatpump_id is not None:
+        for description, data_path, value_fn in SENSOR_DESCRIPTIONS_POOLSYNC:
+            data_path[1] = heatpump_id
+            sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
+    
+    if chlorinator_id is not None:
+        for description, data_path, value_fn in SENSOR_DESCRIPTIONS_CHLORSYNC:
+            data_path[1] = chlorinator_id
+            sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
+ 
+    for description, data_path, value_fn in SENSOR_DESCRIPTIONS_HEATPUMP:
+        _LOGGER.info("data_path")
+        _LOGGER.info(data_path)
+        sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
+        
     if sensors_to_add:
         async_add_entities(sensors_to_add)
         _LOGGER.info("Added %d PoolSync sensors for %s", len(sensors_to_add), coordinator.name)

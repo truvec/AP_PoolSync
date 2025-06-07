@@ -166,7 +166,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors={}, # Errors are handled by the re-entry with user_input containing an error
         )
 
-    async def _async_poll_for_password(self) -> None:
+async def _async_poll_for_password(self) -> None:
         """Poll the device for pushlink status until password is received or timeout."""
         _LOGGER.debug("ConfigFlow: Starting password polling loop for %s.", self._ip_address)
         if not self._api_client or not self._ip_address:
