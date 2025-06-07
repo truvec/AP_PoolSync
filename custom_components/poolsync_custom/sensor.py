@@ -23,6 +23,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
+from homeassistant.util.unit_system import METRIC_SYSTEM
 
 from .const import DOMAIN
 from .coordinator import PoolSyncDataUpdateCoordinator
@@ -190,27 +191,30 @@ async def async_setup_entry(
         # Still attempt to add sensors; they will become unavailable if their specific data is missing.
     
     # change temperature unit
-    
+    # is_metric = hass.config.units is METRIC_SYSTEM
     
     
     heatpump_id = coordinator.heatpump_id
     chlorinator_id = coordinator.chlorinator_id
     
-    if heatpump_id is not None:
-        for description, data_path, value_fn in SENSOR_DESCRIPTIONS_POOLSYNC:
-            sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
+    
+    for description, data_path, value_fn in SENSOR_DESCRIPTIONS_POOLSYNC:
+        sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
     
     if chlorinator_id is not None:
         for description, data_path, value_fn in SENSOR_DESCRIPTIONS_CHLORSYNC:
             data_path[1] = chlorinator_id
+            #description = _change_temperature_unit(description, is_metric)
             sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
- 
-    for description, data_path, value_fn in SENSOR_DESCRIPTIONS_HEATPUMP:
-        _LOGGER.info("data_path")
-        _LOGGER.info(data_path)
-        data_path[1] = heatpump_id
-        _LOGGER.info(data_path)
-        sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
+    
+    if heatpump_id is not None:
+        for description, data_path, value_fn in SENSOR_DESCRIPTIONS_HEATPUMP:
+            _LOGGER.info("data_path")
+            _LOGGER.info(data_path)
+            data_path[1] = heatpump_id
+            _LOGGER.info(data_path)
+            #description = _change_temperature_unit(description, is_metric)
+            sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
         
     if sensors_to_add:
         async_add_entities(sensors_to_add)
