@@ -73,7 +73,8 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             if self.data and isinstance(self.data.get("deviceType"), dict):
                 deviceTypes = self.data["deviceType"]
                 temp = [key for key, value in deviceTypes.items() if value == "heatPump"]
-                selfl.heatpump_id = temp[0] if temp else None
+                self.heatpump_id = temp[0] if temp else None
+                _Logger.info("Heatpump id: " + str(self.heatpump_id))
                 temp = [key for key, value in deviceTypes.items() if value == "chlorSync"]
                 self.chlorinator_id = temp[0] if temp else None
             return data # Return the full data structure
