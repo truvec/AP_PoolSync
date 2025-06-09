@@ -30,7 +30,13 @@ This is a custom integration for Home Assistant to monitor and control AutoPilot
     * In the "Repository" field, paste the URL of this GitHub repository (e.g., `https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY_NAME`).
     * In the "Category" field, select "Integration".
     * Click "Add".
-3.  **Install Integration:**
+3.  ** Edit Code: **
+    * You must edit sensor.py and number.py
+    * You will see `chlorinator_id = "-1"` and `heatpump_id = "0"`
+    * If you do not have a chlorinator or heatpump, set the corresponding id to "-1"
+    * If you only have one, it will be "0"
+    * If you have both, try clorinator "0" and heatpump "1", or try clorinator "1" and heatpump "0"
+5.  **Install Integration:**
     * Search for "PoolSync Custom" in HACS (it might take a moment to appear after adding the custom repository).
     * Click "Install".
     * Restart Home Assistant when prompted.
