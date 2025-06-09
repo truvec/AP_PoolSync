@@ -39,7 +39,7 @@ PUSHLINK_TIMEOUT_S = 120       # How long to wait for the user to press the butt
 HTTP_TIMEOUT = 25  # <<< Increased timeout for HTTP requests (seconds)
 
 # Platform
-PLATFORMS = ["sensor", "binary_sensor"]
+PLATFORMS = ["sensor", "binary_sensor","number"]
 
 # Option keys
 OPTION_SCAN_INTERVAL = "scan_interval"

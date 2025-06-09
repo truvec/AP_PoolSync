@@ -11,7 +11,10 @@ from homeassistant.components.number import (
     NumberMode,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE
+from homeassistant.const import (
+    PERCENTAGE,
+    UnitOfTemperature,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -32,30 +35,30 @@ _LOGGER = logging.getLogger(__name__)
 
 NUMBER_DESCRIPTIONS_CHLOR: tuple[NumberEntityDescription, List[str], Optional[Callable[[Any], Any]]] = (
     (NumberEntityDescription(
-        key="chlor_output_control" #NUMBER_KEY_CHLOR_OUTPUT, # "chlor_output_control"
+        key="chlor_output_control", #NUMBER_KEY_CHLOR_OUTPUT, # "chlor_output_control"
         name="Chlorinator Output", # This will be the entity name
         icon="mdi:knob", # Using a knob icon for control
         native_unit_of_measurement=PERCENTAGE,
-        native_min_value=0#DEFAULT_CHLOR_OUTPUT_MIN, # e.g., 0
-        native_max_value=100#DEFAULT_CHLOR_OUTPUT_MAX, # e.g., 100
-        native_step=1#DEFAULT_CHLOR_OUTPUT_STEP,     # e.g., 1 or 5
+        native_min_value=0,#DEFAULT_CHLOR_OUTPUT_MIN, # e.g., 0
+        native_max_value=100,#DEFAULT_CHLOR_OUTPUT_MAX, # e.g., 100
+        native_step=1,#DEFAULT_CHLOR_OUTPUT_STEP,     # e.g., 1 or 5
         mode=NumberMode.SLIDER, # Or NumberMode.BOX
     ), ["devices", chlorinator_id, "config", "chlorOutput"], None), # Path to get current value
 )
 
 NUMBER_DESCRIPTIONS_HEATPUMP_F: tuple[NumberEntityDescription, List[str], Optional[Callable[[Any], Any]]] = (
     (NumberEntityDescription(
-        key="temperature_output_control" #NUMBER_KEY_CHLOR_OUTPUT, # "chlor_output_control"
+        key="temperature_output_control", #NUMBER_KEY_CHLOR_OUTPUT, # "chlor_output_control"
         name="Temperature Output", # This will be the entity name
         icon="mdi:knob", # Using a knob icon for control
         native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
         native_min_value=40, # e.g., 0
         native_max_value=104, # e.g., 100
         native_step=1,     # e.g., 1 or 5
-        mode=NumberMode.SLIDER, # Or NumberMode.BOX
+        mode=NumberMode.BOX, # Or NumberMode.BOX
     ), ["devices", heatpump_id, "config", "setpoint"], None), # Path to get current value
     (NumberEntityDescription(
-        key="heat_mode" #NUMBER_KEY_CHLOR_OUTPUT, # "chlor_output_control"
+        key="heat_mode", #NUMBER_KEY_CHLOR_OUTPUT, # "chlor_output_control"
         name="heat_mode", # This will be the entity name
         icon="mdi:knob", # Using a knob icon for control
         native_min_value=0, # e.g., 0
@@ -67,7 +70,7 @@ NUMBER_DESCRIPTIONS_HEATPUMP_F: tuple[NumberEntityDescription, List[str], Option
 
 NUMBER_DESCRIPTIONS_HEATPUMP_C: tuple[NumberEntityDescription, List[str], Optional[Callable[[Any], Any]]] = (
     (NumberEntityDescription(
-        key="temperature_output_control" #NUMBER_KEY_CHLOR_OUTPUT, # "chlor_output_control"
+        key="temperature_output_control", #NUMBER_KEY_CHLOR_OUTPUT, # "chlor_output_control"
         name="Temperature Output", # This will be the entity name
         icon="mdi:knob", # Using a knob icon for control
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -77,7 +80,7 @@ NUMBER_DESCRIPTIONS_HEATPUMP_C: tuple[NumberEntityDescription, List[str], Option
         mode=NumberMode.SLIDER, # Or NumberMode.BOX
     ), ["devices", heatpump_id, "config", "setpoint"], None), # Path to get current value
     (NumberEntityDescription(
-        key="heat_mode" #NUMBER_KEY_CHLOR_OUTPUT, # "chlor_output_control"
+        key="heat_mode", #NUMBER_KEY_CHLOR_OUTPUT, # "chlor_output_control"
         name="heat_mode", # This will be the entity name
         icon="mdi:knob", # Using a knob icon for control
         native_min_value=0, # e.g., 0
@@ -98,6 +101,7 @@ async def async_setup_entry(
 
     number_entities: list[PoolSyncChlorOutputNumberEntity] = []
 
+    _LOGGER.info("NUMBER_PLATFORM: Starting async_setup_entry for %s.", coordinator.name)
     if not coordinator.data:
         _LOGGER.warning("NUMBER_PLATFORM: Coordinator %s has no data. Cannot set up number entities.", coordinator.name)
         return
@@ -227,6 +231,12 @@ class PoolSyncChlorOutputNumberEntity(CoordinatorEntity[PoolSyncDataUpdateCoordi
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
         new_value = int(value) # API expects an integer for percentage
+        datapath = self._data_path
+        _LOGGER.info(str(datapath))
+        
+        deviceId = datapath[1]
+        keyId = datapath[3]
+        
         _LOGGER.info(
             "NUMBER_ENTITY %s: Attempting to set native_value to %d (from HA UI float value: %f)",
             self.entity_description.key, new_value, value
@@ -240,10 +250,13 @@ class PoolSyncChlorOutputNumberEntity(CoordinatorEntity[PoolSyncDataUpdateCoordi
         _LOGGER.debug("NUMBER_ENTITY %s: Using password from coordinator to set value.", self.entity_description.key)
 
         try:
-            _LOGGER.debug("NUMBER_ENTITY %s: Calling api_client.async_set_chlor_output with value %d", self.entity_description.key, new_value)
-            api_response = await self.coordinator.api_client.async_set_chlor_output(
+            _LOGGER.debug("NUMBER_ENTITY %s: Calling api_client._request_patch with value %d", self.entity_description.key, new_value)
+
+            api_response = await self.coordinator.api_client._request_patch(
+                deviceId=deviceId,
+                keyId=keyId,
+                value=new_value,
                 password=current_api_password,
-                output_percentage=new_value
             )
             _LOGGER.info("NUMBER_ENTITY %s: API call to set chlor_output to %d completed. Response: %s", self.entity_description.key, new_value, api_response)
 
