@@ -122,28 +122,6 @@ class PoolSyncApiClient:
                     response_text[:200] # Log a snippet of the response body
                 )
 
-                if response.status == 200:
-                    # PoolSync devices sometimes return non-standard JSON content types like 'text/plain'
-                    # but the body is still JSON. We'll try to parse JSON regardless of content-type if status is 200.
-                    try:
-                        json_response = await response.json(content_type=None) # Try to parse JSON regardless of reported type
-                        _LOGGER.debug("Successfully parsed JSON response: %s", json_response)
-                        return json_response
-                    except (ValueError, aiohttp.ContentTypeError) as e: # Catches json.JSONDecodeError and content type issues
-                        _LOGGER.error("Failed to decode JSON response from %s despite 200 OK. Error: %s. Body: %s", url, e, response_text)
-                        raise PoolSyncApiError(f"Invalid JSON response: {e}", status_code=response.status, body=response_text) from e
-                elif response.status in (401, 403):
-                    _LOGGER.error("Authentication error from %s: %s. Body: %s", url, response.status, response_text)
-                    raise PoolSyncApiAuthError(
-                        f"Authentication failed: {response.status}", status_code=response.status, body=response_text
-                    )
-                else:
-                    _LOGGER.error(
-                        "HTTP error from %s: %s - %s. Body: %s", url, response.status, response.reason, response_text
-                    )
-                    raise PoolSyncApiError(
-                        f"HTTP error {response.status}: {response.reason}", status_code=response.status, body=response_text
-                    )
         except ClientConnectorError as e:
             _LOGGER.error("Network connection error for %s: %s", self._ip_address, e)
             raise PoolSyncApiCommunicationError(
