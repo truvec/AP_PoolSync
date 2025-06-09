@@ -30,8 +30,6 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
         update_interval_seconds: int,
         config_entry_id: str, # For logging/context
         mac_address: str,     # For unique device identification
-        heatpump_id: int,     # Heatpump id
-        chlorinator_id: int,  # chlorinator id
     ) -> None:
         """Initialize the data update coordinator."""
         self.api_client = api_client
@@ -55,8 +53,7 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             "PoolSync coordinator initialized for %s (MAC: %s, IP: %s) with update interval %d seconds",
             self.name, self.mac_address, self._ip_address, update_interval_seconds
         )
-
-
+            
     async def _async_update_data(self) -> Dict[str, Any]:
         """
         Fetch data from the PoolSync device API.
@@ -74,7 +71,6 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 deviceTypes = self.data["deviceType"]
                 temp = [key for key, value in deviceTypes.items() if value == "heatPump"]
                 self.heatpump_id = temp[0] if temp else None
-                _Logger.info("Heatpump id: " + str(self.heatpump_id))
                 temp = [key for key, value in deviceTypes.items() if value == "chlorSync"]
                 self.chlorinator_id = temp[0] if temp else None
             return data # Return the full data structure

@@ -25,7 +25,7 @@ from .const import (
 from .coordinator import PoolSyncDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
+        
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up PoolSync Custom from a config entry."""
     _LOGGER.info(

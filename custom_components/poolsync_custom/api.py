@@ -165,7 +165,7 @@ class PoolSyncApiClient:
         """
         _LOGGER.debug("Querying push-link status for %s.", self._ip_address)
         response = await self._request("GET", API_PATH_PUSHLINK_STATUS)
-        _LOGGER.info(response.json())
+        _LOGGER.info(response)
         # Expected keys: "timeRemaining" or "password" and "macAddress"
         return response
 
@@ -182,7 +182,6 @@ class PoolSyncApiClient:
         _LOGGER.debug("Fetching all data for %s with password.", self._ip_address)
         response = await self._request("GET", API_PATH_ALL_DATA, password=password)
         
-        _LOGGER.info(response.json())
         # Basic validation of the expected top-level key
         if "poolSync" not in response or not isinstance(response.get("poolSync"), dict):
             _LOGGER.error("Main 'poolSync' key missing or not a dictionary in data response for %s: %s", self._ip_address, response)

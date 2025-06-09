@@ -1,6 +1,10 @@
 """Sensor platform for the PoolSync Custom integration."""
 import logging
+import dataclasses
 from typing import Any, Callable, Dict, List, Optional, Union, Tuple
+
+chlorinator_id = "-1"
+heatpump_id = "0"
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -30,17 +34,13 @@ from .coordinator import PoolSyncDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-def description = _change_temperature_unit(description, is_metric):
+def _change_temperature_unit(description, is_metric):
     if is_metric:
         return description
         
-    for key, val in description:
-        if val.native_unit_of_measurement is not UnitOfTemperature.CELSIUS:
-            continue
-        description[key] = dataclasses.replace(
-            val,
-            native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT ,
-        )
+    if description.native_unit_of_measurement is UnitOfTemperature.CELSIUS:      
+        description = dataclasses.replace(description,native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT)
+        
     return description
 
 
@@ -74,51 +74,51 @@ SENSOR_DESCRIPTIONS_CHLORSYNC: Tuple[Tuple[SensorEntityDescription, List[str], O
         key="water_temp", name="Water Temperature", icon="mdi:coolant-temperature",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
-    ), ["devices", "0", "status", "waterTemp"], None),
+    ), ["devices", chlorinator_id, "status", "waterTemp"], None),
     (SensorEntityDescription(
         key="salt_ppm", name="Salt Level", icon="mdi:shaker-outline",
         native_unit_of_measurement=CONCENTRATION_PARTS_PER_MILLION, state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
-    ), ["devices", "0", "status", "saltPPM"], None),
+    ), ["devices", chlorinator_id, "status", "saltPPM"], None),
     (SensorEntityDescription(
-        key="flow_rate", name="Flow Rate", icon="mdi:pump", native_unit_of_measurement=None,
+        key="flow_rate", name="Chlor Flow Rate", icon="mdi:pump", native_unit_of_measurement=None,
         state_class=SensorStateClass.MEASUREMENT,
-    ), ["devices", "0", "status", "flowRate"], None),
+    ), ["devices", chlorinator_id, "status", "flowRate"], None),
     (SensorEntityDescription(
         key="chlor_output_setting", name="Chlorinator Output Setting", icon="mdi:percent-circle",
         native_unit_of_measurement=PERCENTAGE, state_class=SensorStateClass.MEASUREMENT,
-    ), ["devices", "0", "config", "chlorOutput"], None), # This is the sensor for the setting
+    ), ["devices", chlorinator_id, "config", "chlorOutput"], None), # This is the sensor for the setting
     (SensorEntityDescription(
         key="boost_remaining", name="Boost Time Remaining", icon="mdi:timer-sand", native_unit_of_measurement=None,
         state_class=SensorStateClass.MEASUREMENT,
-    ), ["devices", "0", "status", "boostRemaining"], None),
+    ), ["devices", chlorinator_id, "status", "boostRemaining"], None),
     (SensorEntityDescription(
         key="cell_fwd_current", name="Cell Forward Current", icon="mdi:current-dc",
         native_unit_of_measurement=UnitOfElectricCurrent.MILLIAMPERE, device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT, entity_registry_enabled_default=False, entity_category=EntityCategory.DIAGNOSTIC,
-    ), ["devices", "0", "status", "fwdCurrent"], None),
+    ), ["devices", chlorinator_id, "status", "fwdCurrent"], None),
     (SensorEntityDescription(
         key="cell_rev_current", name="Cell Reverse Current", icon="mdi:current-dc",
         native_unit_of_measurement=UnitOfElectricCurrent.MILLIAMPERE, device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT, entity_registry_enabled_default=False, entity_category=EntityCategory.DIAGNOSTIC,
-    ), ["devices", "0", "status", "revCurrent"], None),
+    ), ["devices", chlorinator_id, "status", "revCurrent"], None),
     (SensorEntityDescription(
         key="cell_output_voltage", name="Cell Output Voltage", icon="mdi:lightning-bolt",
         native_unit_of_measurement=UnitOfElectricPotential.MILLIVOLT, device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT, entity_registry_enabled_default=False, entity_category=EntityCategory.DIAGNOSTIC,
-    ), ["devices", "0", "status", "outVoltage"], None),
+    ), ["devices", chlorinator_id, "status", "outVoltage"], None),
     (SensorEntityDescription(
         key="cell_serial_number", name="Cell Serial Number", icon="mdi:barcode-scan",
         entity_registry_enabled_default=False, entity_category=EntityCategory.DIAGNOSTIC,
-    ), ["devices", "0", "system", "cellSerialNum"], None),
+    ), ["devices", chlorinator_id, "system", "cellSerialNum"], None),
     (SensorEntityDescription(
         key="cell_firmware_version", name="Cell Firmware Version", icon="mdi:chip",
         entity_registry_enabled_default=False, entity_category=EntityCategory.DIAGNOSTIC,
-    ), ["devices", "0", "system", "cellFwVersion"], None),
+    ), ["devices", chlorinator_id, "system", "cellFwVersion"], None),
     (SensorEntityDescription(
         key="cell_hardware_version", name="Cell Hardware Version", icon="mdi:memory",
         entity_registry_enabled_default=False, entity_category=EntityCategory.DIAGNOSTIC,
-    ), ["devices", "0", "system", "cellHwVersion"], None),
+    ), ["devices", chlorinator_id, "system", "cellHwVersion"], None),
 )
 SENSOR_DESCRIPTIONS_POOLSYNC: Tuple[Tuple[SensorEntityDescription, List[str], Optional[Callable[[Any], Any]]], ...] = (    
     # --- System Wide Sensors (data from `poolSync`) ---
@@ -157,26 +157,26 @@ SENSOR_DESCRIPTIONS_HEATPUMP: Tuple[Tuple[SensorEntityDescription, List[str], Op
         key="hp_water_temp", name="Water Temperature", icon="mdi:coolant-temperature",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
-    ), ["devices", "0", "status", "waterTemp"], None),
+    ), ["devices", heatpump_id, "status", "waterTemp"], None),
     (SensorEntityDescription(
         key="hp_air_temp", name="Air Temperature", icon="mdi:coolant-temperature",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
-    ), ["devices", "0", "status", "airTemp"], None),
+    ), ["devices", heatpump_id, "status", "airTemp"], None),
     (SensorEntityDescription(
         key="hp_outlet_temp", name="Outlet Temperature", icon="mdi:coolant-temperature",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
-    ), ["devices", "0", "status", "outletTemp"], None),
+    ), ["devices", heatpump_id, "status", "outletTemp"], None),
     (SensorEntityDescription(
         key="hp_mode", name="Mode", icon="mdi:pump", native_unit_of_measurement=None,
         state_class=SensorStateClass.MEASUREMENT,
-    ), ["devices", "0", "config", "mode"], None),
+    ), ["devices", heatpump_id, "config", "mode"], None),
     (SensorEntityDescription(
         key="hp_setpoint_temp", name="SetPoint Temperature", icon="mdi:coolant-temperature",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
-    ), ["devices", "0", "config", "setpoint"], None),
+    ), ["devices", heatpump_id, "config", "setpoint"], None),
 )
 
 async def async_setup_entry(
@@ -191,29 +191,19 @@ async def async_setup_entry(
         # Still attempt to add sensors; they will become unavailable if their specific data is missing.
     
     # change temperature unit
-    # is_metric = hass.config.units is METRIC_SYSTEM
-    
-    
-    heatpump_id = coordinator.heatpump_id
-    chlorinator_id = coordinator.chlorinator_id
-    
+    is_metric = hass.config.units is METRIC_SYSTEM
     
     for description, data_path, value_fn in SENSOR_DESCRIPTIONS_POOLSYNC:
         sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
     
-    if chlorinator_id is not None:
+    if chlorinator_id is not "-1":
         for description, data_path, value_fn in SENSOR_DESCRIPTIONS_CHLORSYNC:
-            data_path[1] = chlorinator_id
-            #description = _change_temperature_unit(description, is_metric)
+            description = _change_temperature_unit(description, is_metric)
             sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
     
-    if heatpump_id is not None:
-        for description, data_path, value_fn in SENSOR_DESCRIPTIONS_HEATPUMP:
-            _LOGGER.info("data_path")
-            _LOGGER.info(data_path)
-            data_path[1] = heatpump_id
-            _LOGGER.info(data_path)
-            #description = _change_temperature_unit(description, is_metric)
+    if heatpump_id is not "-1":
+        for description, data_path, value_fn in SENSOR_DESCRIPTIONS_HEATPUMP:         
+            description = _change_temperature_unit(description, is_metric)
             sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
         
     if sensors_to_add:

@@ -2,6 +2,9 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 
+heatpump_id = "0"
+chlorinator_id = "-1"
+
 from homeassistant.components.number import (
     NumberEntity,
     NumberEntityDescription,
@@ -13,6 +16,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.exceptions import HomeAssistantError # For service call errors
+from homeassistant.util.unit_system import METRIC_SYSTEM
 
 from .const import (
     DOMAIN,
@@ -36,7 +40,7 @@ NUMBER_DESCRIPTIONS_CHLOR: tuple[NumberEntityDescription, List[str], Optional[Ca
         native_max_value=100#DEFAULT_CHLOR_OUTPUT_MAX, # e.g., 100
         native_step=1#DEFAULT_CHLOR_OUTPUT_STEP,     # e.g., 1 or 5
         mode=NumberMode.SLIDER, # Or NumberMode.BOX
-    ), ["devices", "0", "config", "chlorOutput"], None), # Path to get current value
+    ), ["devices", chlorinator_id, "config", "chlorOutput"], None), # Path to get current value
 )
 
 NUMBER_DESCRIPTIONS_HEATPUMP_F: tuple[NumberEntityDescription, List[str], Optional[Callable[[Any], Any]]] = (
@@ -49,7 +53,7 @@ NUMBER_DESCRIPTIONS_HEATPUMP_F: tuple[NumberEntityDescription, List[str], Option
         native_max_value=104, # e.g., 100
         native_step=1,     # e.g., 1 or 5
         mode=NumberMode.SLIDER, # Or NumberMode.BOX
-    ), ["devices", "0", "config", "setpoint"], None), # Path to get current value
+    ), ["devices", heatpump_id, "config", "setpoint"], None), # Path to get current value
     (NumberEntityDescription(
         key="heat_mode" #NUMBER_KEY_CHLOR_OUTPUT, # "chlor_output_control"
         name="heat_mode", # This will be the entity name
@@ -58,7 +62,7 @@ NUMBER_DESCRIPTIONS_HEATPUMP_F: tuple[NumberEntityDescription, List[str], Option
         native_max_value=2, # e.g., 100
         native_step=1,     # e.g., 1 or 5
         mode=NumberMode.BOX, # Or NumberMode.BOX
-    ), ["devices", "0", "config", "mode"], None), # Path to get current value
+    ), ["devices", heatpump_id, "config", "mode"], None), # Path to get current value
 )
 
 NUMBER_DESCRIPTIONS_HEATPUMP_C: tuple[NumberEntityDescription, List[str], Optional[Callable[[Any], Any]]] = (
@@ -71,7 +75,7 @@ NUMBER_DESCRIPTIONS_HEATPUMP_C: tuple[NumberEntityDescription, List[str], Option
         native_max_value=40, # e.g., 100
         native_step=0.5,     # e.g., 1 or 5
         mode=NumberMode.SLIDER, # Or NumberMode.BOX
-    ), ["devices", "0", "config", "setpoint"], None), # Path to get current value
+    ), ["devices", heatpump_id, "config", "setpoint"], None), # Path to get current value
     (NumberEntityDescription(
         key="heat_mode" #NUMBER_KEY_CHLOR_OUTPUT, # "chlor_output_control"
         name="heat_mode", # This will be the entity name
@@ -80,7 +84,7 @@ NUMBER_DESCRIPTIONS_HEATPUMP_C: tuple[NumberEntityDescription, List[str], Option
         native_max_value=2, # e.g., 100
         native_step=1,     # e.g., 1 or 5
         mode=NumberMode.BOX, # Or NumberMode.BOX
-    ), ["devices", "0", "config", "mode"], None), # Path to get current value
+    ), ["devices", heatpump_id, "config", "mode"], None), # Path to get current value
 )
 
 async def async_setup_entry(
@@ -112,12 +116,10 @@ async def async_setup_entry(
 
     _LOGGER.debug("NUMBER_PLATFORM: Coordinator data seems valid for device '0'. Proceeding to create number entities.")
 
-    heatpump_id = coordinator.heatpump_id
-    chlorinator_id = coordinator.chlorinator_id
+    _LOGGER.info("Making Number Sensor")
     
-    if chlorinator_id is not None:
+    if chlorinator_id is not "-1":
         for description, data_path, value_fn in NUMBER_DESCRIPTIONS_CHLOR:
-            data_path[1] = chlorinator_id
             _LOGGER.debug("NUMBER_PLATFORM: Processing number entity description for key: %s", description.key)
             current_value = _get_value_from_path(coordinator.data, data_path)
             if current_value is None:
@@ -138,15 +140,17 @@ async def async_setup_entry(
                 _LOGGER.debug("NUMBER_PLATFORM: Successfully created instance for %s.", description.key)
             except Exception as e:
                 _LOGGER.exception("NUMBER_PLATFORM: Error creating instance for %s: %s", description.key, e)
-    
-    if heatpump_id is not None:
+
+    is_metric = hass.config.units is METRIC_SYSTEM
+    _LOGGER.info("Making Heatpump Number Sensor")
+    if heatpump_id is not "-1":
         if is_metric:
             number_descriptions_heatpump = NUMBER_DESCRIPTIONS_HEATPUMP_C
         else:
             number_descriptions_heatpump = NUMBER_DESCRIPTIONS_HEATPUMP_F
             
         for description, data_path, value_fn in number_descriptions_heatpump:
-            data_path[1] = heatpump_id
+            _LOGGER.info("Making Heatpump numbers")
             _LOGGER.debug("NUMBER_PLATFORM: Processing number entity description for key: %s", description.key)
             current_value = _get_value_from_path(coordinator.data, data_path)
             if current_value is None:
@@ -162,6 +166,7 @@ async def async_setup_entry(
                 )
             
             try:
+                _LOGGER.info("Try: Making Number Sensor")
                 entity_instance = PoolSyncChlorOutputNumberEntity(coordinator, description, data_path, value_fn)
                 number_entities.append(entity_instance)
                 _LOGGER.debug("NUMBER_PLATFORM: Successfully created instance for %s.", description.key)
