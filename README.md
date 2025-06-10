@@ -74,6 +74,7 @@ This integration will create several entities, including (but not limited to):
     * Water Temperature
     * Setpoint Temperature
     * Output Temperature
+    * Air Temperature
     * Mode (0-off, 1-heat, 2-cool)
 * **Binary Sensors:**
     * PoolSync Online Status
@@ -81,6 +82,7 @@ This integration will create several entities, including (but not limited to):
     * System Fault Status
     * ChlorSync Fault Status
     * Service Mode Active
+    * HeatPump Module Online Status
     * Heat Pump Fan
     * Heat Pump Compressor
     * Heat Pump Flow 
