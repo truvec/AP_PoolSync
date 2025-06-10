@@ -34,9 +34,9 @@ This is a custom integration for Home Assistant to monitor and control AutoPilot
     * You must edit const.py
     * You will see `CHLORINATOR_ID = "-1"` and `HEATPUMP_ID = "0"`
     * If you do not have a chlorinator or heatpump, set the corresponding id to "-1"
-    * If you only have one, it will be "0"
+    * If you only have one, the one you have will be "0"
     * If you have both, try clorinator "0" and heatpump "1", or try clorinator "1" and heatpump "0"
-    * After edding code, you must restart home assistant
+    * After editing code, you must restart home assistant
 5.  **Install Integration:**
     * Search for "PoolSync Custom" in HACS (it might take a moment to appear after adding the custom repository).
     * Click "Install".
