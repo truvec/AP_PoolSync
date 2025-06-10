@@ -30,7 +30,7 @@ This is a custom integration for Home Assistant to monitor and control AutoPilot
     * In the "Repository" field, paste the URL of this GitHub repository (e.g., `https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY_NAME`).
     * In the "Category" field, select "Integration".
     * Click "Add".
-3.  ** Edit Code: **
+3.  **Edit Code:**
     * You must edit const.py
     * You will see `CHLORINATOR_ID = "-1"` and `HEATPUMP_ID = "0"`
     * If you do not have a chlorinator or heatpump, set the corresponding id to "-1"
