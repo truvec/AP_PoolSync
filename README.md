@@ -89,7 +89,7 @@ This integration will create several entities, including (but not limited to):
 * **Number Controls:**
     * Chlorinator Output (allows setting the output percentage, typically 0-100%)
     * HeatPump Temperature Set Point (allows setting the output percentage, typically 40-104 F)
-    * HeatPump Mode (0-off, 1-on, 2-cool)
+    * HeatPump Mode (0-off, 1-on, 2-cool) - Setting to 1 will change set point to 68F. You must then set temperature manaully
 
 The exact entities will depend on the data reported by your specific PoolSync model and firmware. Some diagnostic entities may be disabled by default and can be enabled via the entity settings in Home Assistant.
 
