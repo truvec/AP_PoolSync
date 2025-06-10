@@ -54,13 +54,13 @@ BINARY_SENSOR_DESCRIPTIONS_HEATPUMP: Tuple[Tuple[BinarySensorEntityDescription, 
         key="heatpump_fault", name="HeatPump Module Fault", device_class=BinarySensorDeviceClass.PROBLEM, entity_registry_enabled_default=True,
     ), ["devices", HEATPUMP_ID, "faults"], lambda v: isinstance(v, list) and any(fault_code != 0 for fault_code in v)), # CORRECTED PATH
     (BinarySensorEntityDescription(
-        key="heatpump_flow", name="HeatPump Flow", device_class=BinarySensorDeviceClass.RUNNING, entity_registry_enabled_default=True,
+        key="heatpump_flow", name="HeatPump Flow", entity_registry_enabled_default=True,
     ), ["devices", HEATPUMP_ID, "status", "ctrlFlags"], lambda v: bool(v >= 1) if isinstance(v, (bool, int)) else None),
     (BinarySensorEntityDescription(
-        key="heatpump_compressor", name="HeatPump Compressor", device_class=BinarySensorDeviceClass.RUNNING, entity_registry_enabled_default=True,
+        key="heatpump_compressor", name="HeatPump Compressor", entity_registry_enabled_default=True,
     ), ["devices", HEATPUMP_ID, "status", "stateFlags"], lambda v: bool(v == 8) if isinstance(v, (bool, int)) else None),
     (BinarySensorEntityDescription(
-        key="heatpump_fan", name="HeatPump Fan", device_class=BinarySensorDeviceClass.RUNNING, entity_registry_enabled_default=True,
+        key="heatpump_fan", name="HeatPump Fan",entity_registry_enabled_default=True,
     ), ["devices", HEATPUMP_ID, "status", "stateFlags"], lambda v: bool(v == 8 or v == 520) if isinstance(v, (bool, int)) else None),
 )
 
