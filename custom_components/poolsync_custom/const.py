@@ -3,6 +3,9 @@
 # Domain for the integration (must match folder name and manifest.json)
 DOMAIN = "poolsync_custom"
 
+CHLORINATOR_ID = "-1"
+HEATPUMP_ID = "0"
+
 # Configuration keys used in config_flow and config_entry
 CONF_IP_ADDRESS = "ip_address"
 CONF_PASSWORD = "password" # Stored in config entry after successful linking
