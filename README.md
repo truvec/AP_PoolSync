@@ -92,7 +92,12 @@ This integration will create several entities, including (but not limited to):
     * HeatPump Mode (0-off, 1-on, 2-cool) - Setting to 1 will change set point to 68F. You must then set temperature manaully
 
 The exact entities will depend on the data reported by your specific PoolSync model and firmware. Some diagnostic entities may be disabled by default and can be enabled via the entity settings in Home Assistant.
-
+## Templates
+If you want a simple switch to turn heater on/off:
+   * Make a switch template (Settings->Devices & Servies-> Helpers Tab). type template, then select switch template
+   * Set value template to `{{is_state('sensor.poolsync_XXXXX_mode', '1')}}` where XXXX is the MAC of your poolsync (should come up if type poolsync)
+   * Change `on action` to number, entity number.poolsync_heat_mode to 1
+   * Change `off action` to number, entity number.poolsync_heat_mode to 0
 ## Options
 
 After setting up the integration, you can adjust the polling interval:
