@@ -98,6 +98,18 @@ If you want a simple switch to turn heater on/off:
    * Set value template to `{{is_state('sensor.poolsync_XXXXX_mode', '1')}}` where XXXX is the MAC of your poolsync (should come up if type poolsync)
    * Change `on action` to number, entity number.poolsync_heat_mode to 1
    * Change `off action` to number, entity number.poolsync_heat_mode to 0
+If you want a sensor that shows if set to Off/Heat/Cool
+   * Make a switch template (Settings->Devices & Servies-> Helpers Tab). type template, then select sensor template
+   * Set value template to below where XXXX is the MAC of your poolsync (should come up if type poolsync)
+   ```
+      {% set t = states('sensor.poolsync_XXX_mode') | int(0) %}
+          {% if t == 0 %} Off
+          {% elif t == 1 %} Heat
+          {% elif t == 2 %} Cool
+          {% else %} Unknown
+          {% endif %}
+   ```
+
 ## Options
 
 After setting up the integration, you can adjust the polling interval:
