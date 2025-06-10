@@ -81,6 +81,9 @@ This integration will create several entities, including (but not limited to):
     * System Fault Status
     * ChlorSync Fault Status
     * Service Mode Active
+    * Heat Pump Fan
+    * Heat Pump Compressor
+    * Heat Pump Flow 
 * **Number Controls:**
     * Chlorinator Output (allows setting the output percentage, typically 0-100%)
     * HeatPump Temperature Set Point (allows setting the output percentage, typically 40-104 F)
