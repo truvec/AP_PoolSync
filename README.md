@@ -33,6 +33,7 @@ This is a custom integration for Home Assistant to monitor and control AutoPilot
 3.  **Edit Code:**
     * You must edit const.py
     * You will see `CHLORINATOR_ID = "-1"` and `HEATPUMP_ID = "0"`
+    * Above settings will work if you only have a HeatPump 
     * If you do not have a chlorinator or heatpump, set the corresponding id to "-1"
     * If you only have one, the one you have will be "0"
     * If you have both, try clorinator "0" and heatpump "1", or try clorinator "1" and heatpump "0"
