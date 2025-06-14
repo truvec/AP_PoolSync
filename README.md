@@ -90,7 +90,7 @@ This integration will create several entities, including (but not limited to):
 * **Number Controls:**
     * Chlorinator Output (allows setting the output percentage, typically 0-100%)
     * HeatPump Temperature Set Point (allows setting the output percentage, typically 40-104 F)
-    * HeatPump Mode (0-off, 1-on, 2-cool) - Setting to 1 will change set point to 68F. You must then set temperature manaully
+    * HeatPump Mode (0-off, 1-on, 2-cool)
 
 The exact entities will depend on the data reported by your specific PoolSync model and firmware. Some diagnostic entities may be disabled by default and can be enabled via the entity settings in Home Assistant.
 ## Templates
@@ -101,7 +101,6 @@ If you want a simple switch to turn heater on/off:
    * Change `off action` to number, entity number.poolsync_heat_mode to 0
    * Associate with the poolsync device under Device (optional: this will make it show in the integration's list of entities)
    * You can make another swtich with on action to 2 if you want cool mode
-   * Remember, setting to heat/cool will reset the temperature back to 68F (not sure what is C), so you need to set the temp again after turning heat on
      
 If you want a sensor that shows if set to Off/Heat/Cool
    * Make a switch template (Settings->Devices & Servies-> Helpers Tab). type template, then select sensor template
