@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
 
-This is a custom integration for Home Assistant to monitor and control AutoPilot PoolSync pool chlorinators over the local network. It does not rely on any cloud services.
+This is a custom integration for Home Assistant to monitor and control AutoPilot PoolSync pool chlorinators and heat pumps over the local network. It does not rely on any cloud services.
 
 ## Features
 
@@ -71,7 +71,7 @@ This integration will create several entities, including (but not limited to):
     * Chlorinator Output Setting (current setting read from device)
     * Boost Time Remaining
     * Various diagnostic sensors (Wi-Fi RSSI, board temperature, cell currents/voltages, firmware versions - some may be disabled by default).
-* **Sensors (HeatPump):**
+* **Sensors (HeatPump):** Thanks to @ccpk1 and others on home assistant forum
     * Water Temperature
     * Setpoint Temperature
     * Output Temperature
