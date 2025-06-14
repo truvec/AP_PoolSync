@@ -85,7 +85,7 @@ class PoolSyncApiClient:
             "User-Agent": "HomeAssistant-PoolSyncCustom/0.1.0", # Match version in manifest
             "Accept": "application/json, text/plain, */*", # Broader accept based on some device behaviors
             HEADER_USER: USER_HEADER_VALUE,
-            "Connection": "keep-alive", # As per curl example
+            #"Connection": "keep-alive", # As per curl example
             "Accept-Encoding": "gzip, deflate, br", # As per curl example
             # Host header is automatically set by aiohttp
         }
@@ -97,11 +97,11 @@ class PoolSyncApiClient:
            'device': deviceId,
         }
 
-        #json_data = {}
+        
         #json_data[keyId] = int(value)
         json_data = {
             'config': {
-                'setpoint': 68,
+                #'setpoint': 68,
             },
         }
         json_data['config'][keyId] = int(value)
@@ -166,7 +166,7 @@ class PoolSyncApiClient:
             "User-Agent": "HomeAssistant-PoolSyncCustom/0.1.0", # Match version in manifest
             "Accept": "application/json, text/plain, */*", # Broader accept based on some device behaviors
             HEADER_USER: USER_HEADER_VALUE,
-            "Connection": "keep-alive", # As per curl example
+            #"Connection": "keep-alive", # As per curl example
             "Accept-Encoding": "gzip, deflate, br", # As per curl example
             # Host header is automatically set by aiohttp
         }
