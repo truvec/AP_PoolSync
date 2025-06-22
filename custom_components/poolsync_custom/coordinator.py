@@ -67,12 +67,6 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             if not isinstance(data, dict) or not all(k in data for k in ["poolSync", "devices"]):
                 _LOGGER.error("Coordinator %s: Fetched data is not a dict or essential keys ('poolSync', 'devices') are missing. Data: %s", self.name, data)
                 raise UpdateFailed(f"Malformed data received from {self.name}: essential keys missing or data not a dict.")
-            if self.data and isinstance(self.data.get("deviceType"), dict):
-                deviceTypes = self.data["deviceType"]
-                temp = [key for key, value in deviceTypes.items() if value == "heatPump"]
-                self.heatpump_id = temp[0] if temp else None
-                temp = [key for key, value in deviceTypes.items() if value == "chlorSync"]
-                self.chlorinator_id = temp[0] if temp else None
             return data # Return the full data structure
 
         except PoolSyncApiAuthError as err:

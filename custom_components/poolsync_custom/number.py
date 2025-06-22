@@ -119,13 +119,20 @@ async def async_setup_entry(
         return
 
     _LOGGER.debug("NUMBER_PLATFORM: Coordinator data seems valid for device '0'. Proceeding to create number entities.")
-
-    _LOGGER.info("XXXMaking Number Sensor: " + str(CHLORINATOR_ID))
     
-    if CHLORINATOR_ID != "-1":
-        _LOGGER.info("XXX Why am I here: " + str(CHLORINATOR_ID))
+    heatpump_id = HEATPUMP_ID
+    chlor_id = CHLORINATOR_ID
+    if coordinator.data and isinstance(coordinator.data.get("deviceType"), dict):
+        deviceTypes = coordinator.data.get("deviceType")
+        temp = [key for key, value in deviceTypes.items() if value == "heatPump"]
+        heatpump_id = temp[0] if temp else "-1"
+        temp = [key for key, value in deviceTypes.items() if value == "chlorSync"]
+        chlor_id = temp[0] if temp else "-1"
+    
+    if chlor_id != "-1":
         for description, data_path, value_fn in NUMBER_DESCRIPTIONS_CHLOR:
             _LOGGER.debug("NUMBER_PLATFORM: Processing number entity description for key: %s", description.key)
+            data_path[1] = chlor_id
             current_value = _get_value_from_path(coordinator.data, data_path)
             if current_value is None:
                 _LOGGER.warning(
@@ -147,16 +154,15 @@ async def async_setup_entry(
                 _LOGGER.exception("NUMBER_PLATFORM: Error creating instance for %s: %s", description.key, e)
 
     is_metric = hass.config.units is METRIC_SYSTEM
-    _LOGGER.info("Making Heatpump Number Sensor")
-    if HEATPUMP_ID != "-1":
+    if heatpump_id != "-1":
         if is_metric:
             number_descriptions_heatpump = NUMBER_DESCRIPTIONS_HEATPUMP_C
         else:
             number_descriptions_heatpump = NUMBER_DESCRIPTIONS_HEATPUMP_F
             
         for description, data_path, value_fn in number_descriptions_heatpump:
-            _LOGGER.info("Making Heatpump numbers")
             _LOGGER.debug("NUMBER_PLATFORM: Processing number entity description for key: %s", description.key)
+            data_path[1] = heatpump_id
             current_value = _get_value_from_path(coordinator.data, data_path)
             if current_value is None:
                 _LOGGER.warning(
@@ -171,7 +177,6 @@ async def async_setup_entry(
                 )
             
             try:
-                _LOGGER.info("Try: Making Number Sensor")
                 entity_instance = PoolSyncChlorOutputNumberEntity(coordinator, description, data_path, value_fn)
                 number_entities.append(entity_instance)
                 _LOGGER.debug("NUMBER_PLATFORM: Successfully created instance for %s.", description.key)

@@ -166,11 +166,6 @@ SENSOR_DESCRIPTIONS_HEATPUMP: Tuple[Tuple[SensorEntityDescription, List[str], Op
         state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
     ), ["devices", HEATPUMP_ID, "status", "airTemp"], None),
     (SensorEntityDescription(
-        key="hp_outlet_temp", name="Outlet Temperature", icon="mdi:coolant-temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
-    ), ["devices", HEATPUMP_ID, "status", "outletTemp"], None),
-    (SensorEntityDescription(
         key="hp_mode", name="Mode", icon="mdi:pump", native_unit_of_measurement=None,
         state_class=SensorStateClass.MEASUREMENT,
     ), ["devices", HEATPUMP_ID, "config", "mode"], None),
@@ -192,21 +187,31 @@ async def async_setup_entry(
         _LOGGER.warning("Coordinator %s: Initial data is missing 'poolSync' or 'devices' top-level keys. Sensor setup may be incomplete.", coordinator.name)
         # Still attempt to add sensors; they will become unavailable if their specific data is missing.
     
+    heatpump_id = HEATPUMP_ID
+    chlor_id = CHLORINATOR_ID
+    if coordinator.data and isinstance(coordinator.data.get("deviceType"), dict):
+        deviceTypes = coordinator.data.get("deviceType")
+        temp = [key for key, value in deviceTypes.items() if value == "heatPump"]
+        heatpump_id = temp[0] if temp else "-1"
+        temp = [key for key, value in deviceTypes.items() if value == "chlorSync"]
+        chlor_id = temp[0] if temp else "-1"
+    
     # change temperature unit
     is_metric = hass.config.units is METRIC_SYSTEM
     
     for description, data_path, value_fn in SENSOR_DESCRIPTIONS_POOLSYNC:
         sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
-    
-    if CHLORINATOR_ID != "-1":
-        _LOGGER.info("YYY Why am I here")
+        
+    if chlor_id != "-1":
         for description, data_path, value_fn in SENSOR_DESCRIPTIONS_CHLORSYNC:
             description = _change_temperature_unit(description, is_metric)
+            data_path[1] = chlor_id
             sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
     
-    if HEATPUMP_ID != "-1":
+    if heatpump_id != "-1":
         for description, data_path, value_fn in SENSOR_DESCRIPTIONS_HEATPUMP:         
             description = _change_temperature_unit(description, is_metric)
+            data_path[1] = heatpump_id
             sensors_to_add.append(PoolSyncSensor(coordinator, description, data_path, value_fn))
         
     if sensors_to_add:

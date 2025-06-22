@@ -80,13 +80,14 @@ class PoolSyncApiClient:
         """
         path = '/api/poolsync'
         url = f"{self._base_url}{path}"
-        _LOGGER.info(url)
         headers = {
-            "User-Agent": "HomeAssistant-PoolSyncCustom/0.1.0", # Match version in manifest
-            "Accept": "application/json, text/plain, */*", # Broader accept based on some device behaviors
+            #"User-Agent": "HomeAssistant-PoolSyncCustom/0.1.0", # Match version in manifest
+            #"Accept": "application/json, text/plain, */*", # Broader accept based on some device behaviors
+            "Content-Type": "application/json",
             HEADER_USER: USER_HEADER_VALUE,
             #"Connection": "keep-alive", # As per curl example
-            "Accept-Encoding": "gzip, deflate, br", # As per curl example
+            #"Accept-Encoding": "gzip, deflate, br", # As per curl example
+            "Accept-Encoding": "gzip, deflate", # As per curl example
             # Host header is automatically set by aiohttp
         }
         if password:
@@ -105,10 +106,6 @@ class PoolSyncApiClient:
             },
         }
         json_data['config'][keyId] = int(value)
-
-        
-        _LOGGER.info(params)
-        _LOGGER.info(json_data)
         
         try:
             async with self._session.patch(url, params=params, headers=headers, json=json_data, timeout=HTTP_TIMEOUT
@@ -163,11 +160,11 @@ class PoolSyncApiClient:
         """
         url = f"{self._base_url}{path}"
         headers = {
-            "User-Agent": "HomeAssistant-PoolSyncCustom/0.1.0", # Match version in manifest
-            "Accept": "application/json, text/plain, */*", # Broader accept based on some device behaviors
+            #"User-Agent": "HomeAssistant-PoolSyncCustom/0.1.0", # Match version in manifest
+            #"Accept": "application/json, text/plain, */*", # Broader accept based on some device behaviors
             HEADER_USER: USER_HEADER_VALUE,
             #"Connection": "keep-alive", # As per curl example
-            "Accept-Encoding": "gzip, deflate, br", # As per curl example
+            #"Accept-Encoding": "gzip, deflate, br", # As per curl example
             # Host header is automatically set by aiohttp
         }
         if password:

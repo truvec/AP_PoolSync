@@ -73,16 +73,26 @@ async def async_setup_entry(
     if not coordinator.data or not (isinstance(coordinator.data.get("poolSync"), dict) and isinstance(coordinator.data.get("devices"), dict)):
         _LOGGER.warning("Coordinator %s: Initial data is missing 'poolSync' or 'devices' top-level keys. Binary sensor setup may be incomplete.", coordinator.name)
     
-    
+    heatpump_id = HEATPUMP_ID
+    chlor_id = CHLORINATOR_ID
+    if coordinator.data and isinstance(coordinator.data.get("deviceType"), dict):
+        deviceTypes = coordinator.data.get("deviceType")
+        temp = [key for key, value in deviceTypes.items() if value == "heatPump"]
+        heatpump_id = temp[0] if temp else "-1"
+        temp = [key for key, value in deviceTypes.items() if value == "chlorSync"]
+        chlor_id = temp[0] if temp else "-1"
+        
     for description, data_path, value_fn in BINARY_SENSOR_DESCRIPTIONS_POOLSYNC:
         binary_sensors_to_add.append(PoolSyncBinarySensor(coordinator, description, data_path, value_fn))
     
-    if CHLORINATOR_ID != "-1" : 
+    if chlor_id != "-1":
         for description, data_path, value_fn in BINARY_SENSOR_DESCRIPTIONS_CHLORSYNC:
+            data_path[1] = chlor_id
             binary_sensors_to_add.append(PoolSyncBinarySensor(coordinator, description, data_path, value_fn))
            
-    if HEATPUMP_ID != "-1" : 
+    if heatpump_id != "-1":
         for description, data_path, value_fn in BINARY_SENSOR_DESCRIPTIONS_HEATPUMP:
+            data_path[1] = heatpump_id
             binary_sensors_to_add.append(PoolSyncBinarySensor(coordinator, description, data_path, value_fn))       
 
     if binary_sensors_to_add:
