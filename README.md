@@ -139,6 +139,7 @@ Configure these in your `configuration.yaml` as per the Home Assistant documenta
 * If linking fails, try restarting the PoolSync device and then attempt the configuration again.
 * Check Home Assistant logs (Settings > System > Logs) for any error messages related to `poolsync_custom`. Enable debug logging for `custom_components.poolsync_custom` if needed (see Home Assistant documentation on how to set logger levels).
 * Use the Diagnostics feature (on the device page in HA, click the three dots, then "Download diagnostics") to download raw data from the integration, which can be helpful for debugging.
+* If your connection drops out (connection reset by peer error), a stronger WiFi signal is needed. Get an extender/mesh network. Ensure it is connected to the closest node in your mesh.  Hitting the reboot button on the PoolSync will fix it temporarily until you can get a better signal.
 
 ## Contributing
 
