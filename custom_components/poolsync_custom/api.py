@@ -53,6 +53,88 @@ class PoolSyncApiClient:
         self._base_url = f"http://{self._ip_address}"
         _LOGGER.debug("PoolSyncApiClient initialized for IP: %s", self._ip_address)
 
+    async def _request_patch(
+        
+        self,
+        deviceId,
+        keyId,
+        value,
+        password: Optional[str] = None,
+        
+    ) -> Dict[str, Any]:
+        """
+        Make an HTTP request to the PoolSync device.
+
+        Args:
+            method: HTTP method (GET, PUT).
+            path: API endpoint path.
+            password: Optional password for authorization.
+
+        Returns:
+            A dictionary containing the JSON response from the API.
+
+        Raises:
+            PoolSyncApiCommunicationError: If there's a network or device communication issue.
+            PoolSyncApiAuthError: If the server returns a 401 or 403 error.
+            PoolSyncApiError: For other HTTP errors or invalid JSON response.
+        """
+        path = '/api/poolsync'
+        url = f"{self._base_url}{path}"
+        headers = {
+            #"User-Agent": "HomeAssistant-PoolSyncCustom/0.1.0", # Match version in manifest
+            #"Accept": "application/json, text/plain, */*", # Broader accept based on some device behaviors
+            "Content-Type": "application/json",
+            HEADER_USER: USER_HEADER_VALUE,
+            #"Connection": "keep-alive", # As per curl example
+            #"Accept-Encoding": "gzip, deflate, br", # As per curl example
+            "Accept-Encoding": "gzip, deflate", # As per curl example
+            # Host header is automatically set by aiohttp
+        }
+        if password:
+            headers[HEADER_AUTHORIZATION] = password
+
+        params = {
+           'cmd': 'devices',
+           'device': deviceId,
+        }
+
+        
+        #json_data[keyId] = int(value)
+        json_data = {
+            'config': {
+                #'setpoint': 68,
+            },
+        }
+        json_data['config'][keyId] = int(value)
+        
+        try:
+            async with self._session.patch(url, params=params, headers=headers, json=json_data, timeout=HTTP_TIMEOUT
+            ) as response:
+                response_text = await response.text() # Read text first for logging/errors
+                _LOGGER.debug(
+                    "Response from %s: Status: %s, Content-Type: %s, Body snippet: %s",
+                    url,
+                    response.status,
+                    response.headers.get("Content-Type"),
+                    response_text[:200] # Log a snippet of the response body
+                )
+
+        except ClientConnectorError as e:
+            _LOGGER.error("Network connection error for %s: %s", self._ip_address, e)
+            raise PoolSyncApiCommunicationError(
+                f"Cannot connect to PoolSync device at {self._ip_address}: {e}"
+            ) from e
+        except asyncio.TimeoutError as e: # This is for the overall request timeout
+            _LOGGER.error("Request timed out for %s accessing %s", self._ip_address, url)
+            raise PoolSyncApiCommunicationError(
+                f"Request to {url} timed out after {HTTP_TIMEOUT}s"
+            ) from e
+        # ClientResponseError is a base for many client-side errors, already caught by status checks.
+        # Catching broader Exception for any other unexpected aiohttp or network issues.
+        except Exception as e:
+            _LOGGER.exception("An unexpected error occurred during API request to %s for URL %s: %s", self._ip_address, url, e)
+            raise PoolSyncApiError(f"An unexpected error occurred: {e}") from e
+    
     async def _request(
         self,
         method: str,
@@ -78,11 +160,11 @@ class PoolSyncApiClient:
         """
         url = f"{self._base_url}{path}"
         headers = {
-            "User-Agent": "HomeAssistant-PoolSyncCustom/0.1.0", # Match version in manifest
-            "Accept": "application/json, text/plain, */*", # Broader accept based on some device behaviors
+            #"User-Agent": "HomeAssistant-PoolSyncCustom/0.1.0", # Match version in manifest
+            #"Accept": "application/json, text/plain, */*", # Broader accept based on some device behaviors
             HEADER_USER: USER_HEADER_VALUE,
-            "Connection": "keep-alive", # As per curl example
-            "Accept-Encoding": "gzip, deflate, br", # As per curl example
+            #"Connection": "keep-alive", # As per curl example
+            #"Accept-Encoding": "gzip, deflate, br", # As per curl example
             # Host header is automatically set by aiohttp
         }
         if password:
@@ -165,6 +247,7 @@ class PoolSyncApiClient:
         """
         _LOGGER.debug("Querying push-link status for %s.", self._ip_address)
         response = await self._request("GET", API_PATH_PUSHLINK_STATUS)
+        _LOGGER.info(response)
         # Expected keys: "timeRemaining" or "password" and "macAddress"
         return response
 
@@ -180,7 +263,7 @@ class PoolSyncApiClient:
 
         _LOGGER.debug("Fetching all data for %s with password.", self._ip_address)
         response = await self._request("GET", API_PATH_ALL_DATA, password=password)
-
+        
         # Basic validation of the expected top-level key
         if "poolSync" not in response or not isinstance(response.get("poolSync"), dict):
             _LOGGER.error("Main 'poolSync' key missing or not a dictionary in data response for %s: %s", self._ip_address, response)

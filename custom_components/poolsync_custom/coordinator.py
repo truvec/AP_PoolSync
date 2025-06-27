@@ -53,8 +53,7 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             "PoolSync coordinator initialized for %s (MAC: %s, IP: %s) with update interval %d seconds",
             self.name, self.mac_address, self._ip_address, update_interval_seconds
         )
-
-
+            
     async def _async_update_data(self) -> Dict[str, Any]:
         """
         Fetch data from the PoolSync device API.

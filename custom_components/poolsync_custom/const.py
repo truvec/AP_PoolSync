@@ -3,6 +3,9 @@
 # Domain for the integration (must match folder name and manifest.json)
 DOMAIN = "poolsync_custom"
 
+CHLORINATOR_ID = "-1"
+HEATPUMP_ID = "0"
+
 # Configuration keys used in config_flow and config_entry
 CONF_IP_ADDRESS = "ip_address"
 CONF_PASSWORD = "password" # Stored in config entry after successful linking
@@ -19,7 +22,7 @@ API_RESPONSE_MAC_ADDRESS = "macAddress" # Used as unique ID
 
 # Default values
 DEFAULT_NAME = "PoolSync" # Default name for the device
-DEFAULT_SCAN_INTERVAL = 60  # Default polling interval in seconds
+DEFAULT_SCAN_INTERVAL = 120  # Default polling interval in seconds
 
 # Headers required for API communication
 HEADER_AUTHORIZATION = "authorization"
@@ -36,11 +39,10 @@ PUSHLINK_CHECK_INTERVAL_S = 5  # How often to poll for pushlink status (seconds)
 PUSHLINK_TIMEOUT_S = 120       # How long to wait for the user to press the button (seconds)
 
 # Other constants
-HTTP_TIMEOUT = 25  # <<< Increased timeout for HTTP requests (seconds)
+HTTP_TIMEOUT = 30  # <<< Increased timeout for HTTP requests (seconds)
 
 # Platform
-PLATFORMS = ["sensor", "binary_sensor"]
+PLATFORMS = ["sensor", "binary_sensor","number"]
 
 # Option keys
 OPTION_SCAN_INTERVAL = "scan_interval"
-
