@@ -54,7 +54,7 @@ This is a custom integration for Home Assistant to monitor and control AutoPilot
     * You will be prompted to enter the local IP address of your PoolSync device. Click "Submit".
 5.  **Push-Button Linking:**
     * The integration will attempt to initiate the linking process by sending a command to your PoolSync device.
-    * You will be prompted to **press the "Service" button on your PoolSync device**. (Sometimes this does not show, and only shows a submit button)
+    * You will be prompted to **press the "Auth" button on your PoolSync device**. (Sometimes this does not show, and only shows a submit button)
     * The configuration flow will show the approximate time remaining to press the button.
     * Once the button is pressed and the device responds, the integration will retrieve an access password and the device's MAC address.
 6.  **Setup Complete:**
