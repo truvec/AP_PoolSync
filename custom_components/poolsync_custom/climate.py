@@ -205,15 +205,15 @@ class PoolSyncClimate(CoordinatorEntity[PoolSyncDataUpdateCoordinator], ClimateE
             return
             
         poolsync_mode = HVAC_MODE_TO_POOLSYNC.get(hvac_mode)
-        if poolsunc_mode is None:
+        if poolsync_mode is None:
             _LOGGER.error("Cannot map HVAC mode %s to PoolSync mode", hvac_mode)
             return
             
         try:
             # Use the coordinator methods we added
-            await self.coordinator.async_set_heatpump_mode(self._heatpump_id, poolsunc_mode)
+            await self.coordinator.async_set_heatpump_mode(self._heatpump_id, poolsync_mode)
             await self.coordinator.async_request_refresh()
-            _LOGGER.info("Climate: Set HVAC mode to %s (mode %d)", hvac_mode, poolsunc_mode)
+            _LOGGER.info("Climate: Set HVAC mode to %s (mode %d)", hvac_mode, poolsync_mode)
         except Exception as err:
             _LOGGER.error("Error setting HVAC mode to %s: %s", hvac_mode, err)
 
