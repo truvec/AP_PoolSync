@@ -174,6 +174,11 @@ SENSOR_DESCRIPTIONS_HEATPUMP: Tuple[Tuple[SensorEntityDescription, List[str], Op
         native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=1,
     ), ["devices", HEATPUMP_ID, "config", "setpoint"], None),
+    (SensorEntityDescription(
+        key="hp_compressor_rpm", name="Compressor RPM", icon="mdi:fan",
+        native_unit_of_measurement="rpm", state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=True,
+    ), ["devices", HEATPUMP_ID, "status", "compRPM"], None),
 )
 
 async def async_setup_entry(

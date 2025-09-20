@@ -108,10 +108,10 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             device0_data = self.data["devices"]["0"]
             if isinstance(device0_data.get("nodeAttr"), dict):
                 api_model_name = device0_data["nodeAttr"].get("name")
-                if api_model_name: # Use ChlorSync® as model if available
+                if api_model_name: # Use ChlorSyncÂ® as model if available
                     model_name = api_model_name
 
-        if config_name_from_api and config_name_from_api != "PoolSync®":
+        if config_name_from_api and config_name_from_api != "PoolSyncÂ®":
             device_name = config_name_from_api
         else:
             device_name = f"{DEFAULT_NAME} {self.mac_address[-6:]}" if self.mac_address and len(self.mac_address) >= 6 else DEFAULT_NAME
@@ -125,3 +125,31 @@ class PoolSyncDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             hw_version=str(hw_version) if hw_version is not None else None,
             configuration_url=f"http://{self._ip_address}",
         )
+
+    async def async_set_heatpump_mode(self, device_id: str, mode: int) -> None:
+        """Set the heat pump mode using the existing API pattern."""
+        try:
+            await self.api_client._request_patch(
+                deviceId=device_id,
+                keyId="mode",
+                value=mode,
+                password=self._password,
+            )
+            _LOGGER.info("Coordinator: Set heat pump mode to %s for device %s", mode, device_id)
+        except Exception as err:
+            _LOGGER.error("Coordinator: Failed to set heat pump mode to %s for device %s: %s", mode, device_id, err)
+            raise
+    
+    async def async_set_heatpump_temperature(self, device_id: str, temperature: float) -> None:
+        """Set the heat pump target temperature using the existing API pattern."""
+        try:
+            await self.api_client._request_patch(
+                deviceId=device_id,
+                keyId="setpoint",
+                value=int(temperature),  # API expects integer
+                password=self._password,
+            )
+            _LOGGER.info("Coordinator: Set heat pump temperature to %s for device %s", temperature, device_id)
+        except Exception as err:
+            _LOGGER.error("Coordinator: Failed to set heat pump temperature to %s for device %s: %s", temperature, device_id, err)
+            raise
