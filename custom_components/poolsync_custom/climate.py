@@ -163,47 +163,46 @@ class PoolSyncClimate(CoordinatorEntity[PoolSyncDataUpdateCoordinator], ClimateE
             return HVACMode.OFF
 
     @property
-    @property
-def hvac_action(self) -> HVACAction:
-    """Return the current running hvac operation."""
-    current_mode = self.hvac_mode
-    if current_mode == HVACMode.OFF:
-        return HVACAction.OFF
-        
-    # Check if the heat pump is actively running using mode-specific logic
-    mode_path = ["devices", self._heatpump_id, "config", "mode"]
-    state_flags_path = ["devices", self._heatpump_id, "status", "stateFlags"]
-    ctrl_flags_path = ["devices", self._heatpump_id, "status", "ctrlFlags"]
-    
-    mode_value = _get_value_from_path(self.coordinator.data, mode_path)
-    state_flags_value = _get_value_from_path(self.coordinator.data, state_flags_path)
-    ctrl_flags_value = _get_value_from_path(self.coordinator.data, ctrl_flags_path)
-    
-    is_running = False
-    if mode_value is not None and state_flags_value is not None and ctrl_flags_value is not None:
-        try:
-            mode = int(mode_value)
-            state_flags = int(state_flags_value)
-            ctrl_flags = int(ctrl_flags_value)
+    def hvac_action(self) -> HVACAction:
+        """Return the current running hvac operation."""
+        current_mode = self.hvac_mode
+        if current_mode == HVACMode.OFF:
+            return HVACAction.OFF
             
-            if mode == 1:  # Heating mode
-                # Heat pump is running when stateFlags > 257 AND ctrlFlags >= 397
-                is_running = (state_flags > 257 and ctrl_flags >= 397)
-            elif mode == 2:  # Cooling mode  
-                # Heat pump is running when in cooling state (272) and operation flags active (445+)
-                is_running = (state_flags == 272 and ctrl_flags >= 445)
-        except (ValueError, TypeError):
-            pass
-    
-    if is_running:
-        if current_mode == HVACMode.HEAT:
-            return HVACAction.HEATING
-        elif current_mode == HVACMode.COOL:
-            return HVACAction.COOLING
-    else:
-        return HVACAction.IDLE
+        # Check if the heat pump is actively running using mode-specific logic
+        mode_path = ["devices", self._heatpump_id, "config", "mode"]
+        state_flags_path = ["devices", self._heatpump_id, "status", "stateFlags"]
+        ctrl_flags_path = ["devices", self._heatpump_id, "status", "ctrlFlags"]
         
-    return HVACAction.OFF
+        mode_value = _get_value_from_path(self.coordinator.data, mode_path)
+        state_flags_value = _get_value_from_path(self.coordinator.data, state_flags_path)
+        ctrl_flags_value = _get_value_from_path(self.coordinator.data, ctrl_flags_path)
+        
+        is_running = False
+        if mode_value is not None and state_flags_value is not None and ctrl_flags_value is not None:
+            try:
+                mode = int(mode_value)
+                state_flags = int(state_flags_value)
+                ctrl_flags = int(ctrl_flags_value)
+                
+                if mode == 1:  # Heating mode
+                    # Heat pump is running when stateFlags > 257 AND ctrlFlags >= 397
+                    is_running = (state_flags > 257 and ctrl_flags >= 397)
+                elif mode == 2:  # Cooling mode  
+                    # Heat pump is running when in cooling state (272+) and operation flags active (445+)
+                    is_running = (state_flags >= 272 and ctrl_flags >= 445)
+            except (ValueError, TypeError):
+                pass
+        
+        if is_running:
+            if current_mode == HVACMode.HEAT:
+                return HVACAction.HEATING
+            elif current_mode == HVACMode.COOL:
+                return HVACAction.COOLING
+        else:
+            return HVACAction.IDLE
+            
+        return HVACAction.OFF
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
