@@ -79,46 +79,61 @@ class PoolSyncHeatPumpBinarySensor(CoordinatorEntity[PoolSyncDataUpdateCoordinat
         self._attr_unique_id = f"{coordinator.mac_address}_{description.key}"
         self._attr_device_info = coordinator.device_info
 
-    @property
-    def is_on(self) -> Optional[bool]:
-        """Return true if the binary sensor is on."""
-        if not self.coordinator.data:
-            return None
-            
-        # Get all needed values
-        mode = _get_value_from_path(self.coordinator.data, ["devices", self._heatpump_id, "config", "mode"])
-        state_flags = _get_value_from_path(self.coordinator.data, ["devices", self._heatpump_id, "status", "stateFlags"])
-        ctrl_flags = _get_value_from_path(self.coordinator.data, ["devices", self._heatpump_id, "status", "ctrlFlags"])
+@property
+def is_on(self) -> Optional[bool]:
+    """Return true if the binary sensor is on."""
+    if not self.coordinator.data:
+        return None
         
-        if mode is None or state_flags is None or ctrl_flags is None:
-            return None
+    # Get all needed values
+    mode = _get_value_from_path(self.coordinator.data, ["devices", self._heatpump_id, "config", "mode"])
+    state_flags = _get_value_from_path(self.coordinator.data, ["devices", self._heatpump_id, "status", "stateFlags"])
+    ctrl_flags = _get_value_from_path(self.coordinator.data, ["devices", self._heatpump_id, "status", "ctrlFlags"])
+    
+    if mode is None or state_flags is None or ctrl_flags is None:
+        return None
+        
+    try:
+        mode_val = int(mode)
+        state_val = int(state_flags)
+        ctrl_val = int(ctrl_flags)
+        
+        # Check if heat pump is in an operational mode (heating=1 or cooling=2)
+        if mode_val not in [1, 2]:
+            return False
             
-        try:
-            mode_val = int(mode)
-            state_val = int(state_flags)
-            ctrl_val = int(ctrl_flags)
-            
-            # Only active when in heating mode (mode = 1)
-            if mode_val != 1:
-                return False
-                
-            if self._sensor_type == "active":
+        if self._sensor_type == "active":
+            # Heat pump is active in different ways for different modes
+            if mode_val == 1:  # Heating mode
                 # Heat pump is active if stateFlags > baseline (257)
                 return state_val > 257
+            elif mode_val == 2:  # Cooling mode
+                # In cooling mode, check for active state flags (272+ indicates cooling operation)
+                return state_val >= 272 and ctrl_val >= 445
                 
-            elif self._sensor_type == "fan":
+        elif self._sensor_type == "fan":
+            if mode_val == 1:  # Heating mode
                 # Fan runs when stateFlags >= 264 (based on log analysis)
                 return state_val >= 264
+            elif mode_val == 2:  # Cooling mode
+                # In cooling mode, fan runs when active and ctrl flags indicate operation
+                return state_val >= 272 and ctrl_val >= 445
                 
-            elif self._sensor_type == "compressor":
+        elif self._sensor_type == "compressor":
+            if mode_val == 1:  # Heating mode
                 # Compressor active when ctrlFlags >= 397 (based on log analysis)
                 return ctrl_val >= 397
+            elif mode_val == 2:  # Cooling mode
+                # In cooling mode, compressor active when both state and ctrl flags indicate operation
+                # Consistent with climate entity logic that currently works
+                return state_val >= 272 and ctrl_val >= 445
                 
-        except (ValueError, TypeError):
-            _LOGGER.error("Heat pump binary sensor %s: Could not convert values to int", self._sensor_type)
-            return None
-            
+    except (ValueError, TypeError):
+        _LOGGER.error("Heat pump binary sensor %s: Could not convert values to int", self._sensor_type)
         return None
+        
+    return None
+    
 
     @property
     def available(self) -> bool:
